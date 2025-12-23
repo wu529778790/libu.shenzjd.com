@@ -42,8 +42,8 @@ export default function MainPage() {
     setEvent(event);
     setPassword(password);
 
-    // 加载数据
-    loadData(event.id);
+    // 加载数据（直接使用从session获取的password，不依赖状态）
+    loadData(event.id, password);
 
     // 检查 GitHub 配置
     const githubConfig = localStorage.getItem('giftlist_github');
@@ -55,17 +55,30 @@ export default function MainPage() {
     }
   }, []); // 移除 router 依赖，避免重复执行
 
-  const loadData = async (eventId: string) => {
+  const loadData = async (eventId: string, pwd?: string) => {
     const records = JSON.parse(
       localStorage.getItem(`giftlist_gifts_${eventId}`) || '[]'
     );
 
+    // 使用传入的password或当前状态
+    const decryptPassword = pwd || password;
+
+    console.log('[Main] Loading data for event:', eventId);
+    console.log('[Main] Records count:', records.length);
+    console.log('[Main] Using password length:', decryptPassword?.length);
+
     // 只解密第一页（12条）
     const PAGE_SIZE = 12;
-    const decrypted = records.slice(0, PAGE_SIZE).map((r: GiftRecord) => ({
-      record: r,
-      data: CryptoService.decrypt<GiftData>(r.encryptedData, password),
-    }));
+    const decrypted = records.slice(0, PAGE_SIZE).map((r: GiftRecord) => {
+      const data = CryptoService.decrypt<GiftData>(r.encryptedData, decryptPassword);
+      if (!data) {
+        console.error('[Main] Failed to decrypt record:', r.id);
+      }
+      return {
+        record: r,
+        data,
+      };
+    });
 
     setGifts(decrypted);
   };
