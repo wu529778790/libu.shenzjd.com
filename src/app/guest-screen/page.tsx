@@ -71,71 +71,72 @@ export default function GuestScreen() {
             <div className="col-span-5">金额</div>
           </div>
 
-          {/* 数据行 - 使用 gift-book-grid 样式 */}
+          {/* 数据行 - 3行垂直布局，参考 gift-book 格式 */}
           <div className="gift-book-grid">
-            {Array.from({ length: 3 }).map((_, rowIdx) => (
-              <div key={rowIdx} className="gift-book-row">
-                {Array.from({ length: 12 }).map((_, colIdx) => {
-                  const giftIdx = rowIdx * 12 + colIdx;
-                  const gift = data.gifts[giftIdx];
-                  const isLatest = giftIdx === data.gifts.length - 1;
-
-                  // 计算单元格类型：名字(4格)、类型(3格)、金额(5格)
-                  let cellType = '';
-                  if (colIdx < 4) cellType = 'name';
-                  else if (colIdx < 7) cellType = 'type';
-                  else cellType = 'amount';
-
-                  if (!gift) {
-                    return (
-                      <div key={colIdx} className="book-cell">
-                        <span className="text-gray-200">+</span>
+            {/* 第1行：姓名（竖排） */}
+            <div className="gift-book-row">
+              {Array.from({ length: 12 }).map((_, idx) => {
+                const gift = data.gifts[idx];
+                const isLatest = idx === data.gifts.length - 1;
+                return (
+                  <div
+                    key={idx}
+                    className={`book-cell name-cell ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}
+                  >
+                    {gift ? (
+                      <div className="name">
+                        {gift.name.length === 2
+                          ? `${gift.name[0]}　${gift.name[1]}`
+                          : gift.name}
                       </div>
-                    );
-                  }
+                    ) : (
+                      <span className="text-gray-200">+</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
-                  if (cellType === 'name') {
-                    return (
-                      <div
-                        key={colIdx}
-                        className={`book-cell name-cell ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}
-                      >
-                        <div className="name">
-                          {gift.name.length === 2
-                            ? `${gift.name[0]}　${gift.name[1]}`
-                            : gift.name}
+            {/* 第2行：类型（竖排） */}
+            <div className="gift-book-row">
+              {Array.from({ length: 12 }).map((_, idx) => {
+                const gift = data.gifts[idx];
+                const isLatest = idx === data.gifts.length - 1;
+                return (
+                  <div
+                    key={idx}
+                    className={`book-cell type-cell ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}
+                  >
+                    {gift ? gift.type : <span className="text-gray-200">+</span>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 第3行：金额（竖排：大写 + 数字） */}
+            <div className="gift-book-row">
+              {Array.from({ length: 12 }).map((_, idx) => {
+                const gift = data.gifts[idx];
+                const isLatest = idx === data.gifts.length - 1;
+                return (
+                  <div
+                    key={idx}
+                    className={`book-cell amount-cell ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}
+                  >
+                    {gift ? (
+                      <div className="flex flex-col items-center w-full">
+                        <div className="amount-chinese">
+                          {Utils.amountToChinese(gift.amount)}
+                        </div>
+                        <div className="amount-number">
+                          ¥{gift.amount}
                         </div>
                       </div>
-                    );
-                  } else if (cellType === 'type') {
-                    return (
-                      <div
-                        key={colIdx}
-                        className={`book-cell type-cell ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}
-                      >
-                        {gift.type}
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div
-                        key={colIdx}
-                        className={`book-cell amount-cell ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}
-                      >
-                        <div className="flex flex-col items-center w-full">
-                          <div className="amount-chinese">
-                            {Utils.amountToChinese(gift.amount)}
-                          </div>
-                          <div className="amount-number">
-                            ¥{gift.amount}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                })}
-              </div>
-            ))}
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
