@@ -404,63 +404,63 @@ export default function MainPage() {
                 </div>
               </div>
 
-              {/* 礼簿内容 - 使用网格布局 */}
+              {/* 礼簿内容 - 3行垂直布局，参考 gift-book 格式 */}
               <div className="gift-book-grid">
-                {Array.from({ length: 3 }).map((_, rowIdx) => (
-                  <div key={rowIdx} className="gift-book-row">
-                    {Array.from({ length: 12 }).map((_, colIdx) => {
-                      const idx = rowIdx * 12 + colIdx;
-                      const gift = displayGifts[idx];
-                      const hasData = gift && gift.data;
+                {/* 第1行：姓名（竖排） */}
+                <div className="gift-book-row">
+                  {Array.from({ length: 12 }).map((_, idx) => {
+                    const gift = displayGifts[idx];
+                    const hasData = gift && gift.data && !gift.data.abolished;
+                    return (
+                      <div key={idx} className="book-cell name-cell">
+                        {hasData ? (
+                          <div className="name">
+                            {gift.data!.name.length === 2
+                              ? `${gift.data!.name[0]}　${gift.data!.name[1]}`
+                              : gift.data!.name}
+                          </div>
+                        ) : (
+                          <span className="text-gray-300">+</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
 
-                      // 计算单元格类型：名字(4格)、类型(3格)、金额(5格)
-                      let cellType = '';
-                      if (colIdx < 4) cellType = 'name';
-                      else if (colIdx < 7) cellType = 'type';
-                      else cellType = 'amount';
+                {/* 第2行：类型（竖排） */}
+                <div className="gift-book-row">
+                  {Array.from({ length: 12 }).map((_, idx) => {
+                    const gift = displayGifts[idx];
+                    const hasData = gift && gift.data && !gift.data.abolished;
+                    return (
+                      <div key={idx} className="book-cell type-cell">
+                        {hasData ? gift.data!.type : <span className="text-gray-300">+</span>}
+                      </div>
+                    );
+                  })}
+                </div>
 
-                      if (cellType === 'name') {
-                        return (
-                          <div key={colIdx} className="book-cell name-cell">
-                            {hasData ? (
-                              <div className="name">
-                                {gift.data!.name.length === 2
-                                  ? `${gift.data!.name[0]}　${gift.data!.name[1]}`
-                                  : gift.data!.name}
-                                {gift.data!.abolished && (
-                                  <div className="text-red-600 text-xs">*作废</div>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-gray-300">+</span>
-                            )}
+                {/* 第3行：金额（竖排：大写 + 数字） */}
+                <div className="gift-book-row">
+                  {Array.from({ length: 12 }).map((_, idx) => {
+                    const gift = displayGifts[idx];
+                    const hasData = gift && gift.data && !gift.data.abolished;
+                    return (
+                      <div key={idx} className="book-cell amount-cell">
+                        {hasData ? (
+                          <div className="flex flex-col items-center w-full">
+                            <div className="amount-chinese">
+                              {Utils.amountToChinese(gift.data!.amount)}
+                            </div>
+                            <div className="amount-number">
+                              ¥{gift.data!.amount}
+                            </div>
                           </div>
-                        );
-                      } else if (cellType === 'type') {
-                        return (
-                          <div key={colIdx} className="book-cell type-cell">
-                            {hasData && gift.data!.type}
-                          </div>
-                        );
-                      } else {
-                        return (
-                          <div key={colIdx} className="book-cell amount-cell">
-                            {hasData ? (
-                              <div className="flex flex-col items-center w-full">
-                                <div className="amount-chinese">
-                                  {Utils.amountToChinese(gift.data!.amount)}
-                                </div>
-                                <div className="amount-number">
-                                  ¥{gift.data!.amount}
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      }
-                    })}
-                  </div>
-                ))}
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {displayGifts.length === 0 && (
