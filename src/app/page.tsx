@@ -11,7 +11,7 @@ export default function Home() {
   const [events, setEvents] = useState<any[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [currentSessionEvent, setCurrentSessionEvent] = useState<any>(null);
-  const [password, setPassword] = useState("123456"); // 默认密码
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   // 简单的错误提示状态
@@ -21,65 +21,9 @@ export default function Home() {
     if (typeof window === "undefined") return;
 
     // 检查是否有事件存在
-    let storedEvents = JSON.parse(
+    const storedEvents = JSON.parse(
       localStorage.getItem("giftlist_events") || "[]"
     );
-
-    // 如果没有事件，自动创建示例数据
-    if (storedEvents.length === 0) {
-      const demoEvent = {
-        id: "demo-" + Date.now(),
-        name: "张三李四婚礼(测试)",
-        startDateTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .slice(0, 16),
-        endDateTime: new Date(
-          Date.now() + 7 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000
-        )
-          .toISOString()
-          .slice(0, 16),
-        passwordHash: CryptoService.hash("123456"),
-        theme: "festive" as const,
-        recorder: "演示记账人",
-        createdAt: new Date().toISOString(),
-      };
-
-      // 保存事件
-      storedEvents = [demoEvent];
-      localStorage.setItem("giftlist_events", JSON.stringify(storedEvents));
-
-      // 创建6条加密的礼金数据
-      const password = "123456";
-      const demoGifts = [
-        { name: "张大爷", amount: 888, note: "百年好合" },
-        { name: "李大妈", amount: 666, note: "早生贵子" },
-        { name: "王叔叔", amount: 1000, note: "新婚快乐" },
-        { name: "赵阿姨", amount: 520, note: "一生一世" },
-        { name: "刘叔叔", amount: 1888, note: "大吉大利" },
-        { name: "陈阿姨", amount: 666, note: "六六大顺" },
-      ].map((gift, index) => {
-        const encrypted = CryptoService.encrypt(
-          {
-            name: gift.name,
-            amount: gift.amount,
-            type: "gift",
-            remark: gift.note,
-            timestamp: new Date().toISOString(),
-            abolished: false,
-          },
-          password
-        );
-        return {
-          id: "g" + (index + 1),
-          eventId: demoEvent.id,
-          encryptedData: encrypted,
-        };
-      });
-      localStorage.setItem(
-        "giftlist_gifts_" + demoEvent.id,
-        JSON.stringify(demoGifts)
-      );
-    }
 
     setEvents(storedEvents);
 

@@ -430,11 +430,29 @@ input[type="checkbox"].themed-ring:checked {
   border-right: none;
 }
 
+/* 单个格子的 hover 效果 - 移除 */
 .book-cell:hover {
+  /* 移除单个格子的 hover 效果 */
+}
+
+/* 列 hover 效果 - 使用 data-hover-col 属性 */
+.gift-book-grid[data-hover-col="0"] .book-cell:nth-child(1),
+.gift-book-grid[data-hover-col="1"] .book-cell:nth-child(2),
+.gift-book-grid[data-hover-col="2"] .book-cell:nth-child(3),
+.gift-book-grid[data-hover-col="3"] .book-cell:nth-child(4),
+.gift-book-grid[data-hover-col="4"] .book-cell:nth-child(5),
+.gift-book-grid[data-hover-col="5"] .book-cell:nth-child(6),
+.gift-book-grid[data-hover-col="6"] .book-cell:nth-child(7),
+.gift-book-grid[data-hover-col="7"] .book-cell:nth-child(8),
+.gift-book-grid[data-hover-col="8"] .book-cell:nth-child(9),
+.gift-book-grid[data-hover-col="9"] .book-cell:nth-child(10),
+.gift-book-grid[data-hover-col="10"] .book-cell:nth-child(11),
+.gift-book-grid[data-hover-col="11"] .book-cell:nth-child(12) {
   background-color: var(--link-hover-bg);
   transform: scale(1.02);
   z-index: 1;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .name-cell .name {

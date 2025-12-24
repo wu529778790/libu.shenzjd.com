@@ -546,14 +546,27 @@ export default function MainPage() {
               </div>
 
               {/* 礼簿内容 - 2行垂直布局：姓名、大写金额 */}
-              <div className="gift-book-grid">
+              <div
+                className="gift-book-grid"
+                onMouseLeave={() => {
+                  const grid = document.querySelector('.gift-book-grid');
+                  if (grid) grid.removeAttribute('data-hover-col');
+                }}
+              >
                 {/* 第1行：姓名（竖排） */}
                 <div className="gift-book-row">
                   {Array.from({ length: 12 }).map((_, idx) => {
                     const gift = displayGifts[idx];
                     const hasData = gift && gift.data && !gift.data.abolished;
                     return (
-                      <div key={idx} className="book-cell name-cell">
+                      <div
+                        key={idx}
+                        className="book-cell name-cell"
+                        onMouseEnter={() => {
+                          const grid = document.querySelector('.gift-book-grid');
+                          if (grid) grid.setAttribute('data-hover-col', idx.toString());
+                        }}
+                      >
                         {hasData ? (
                           <div className="name">
                             {gift.data!.name.length === 2
@@ -574,7 +587,14 @@ export default function MainPage() {
                     const gift = displayGifts[idx];
                     const hasData = gift && gift.data && !gift.data.abolished;
                     return (
-                      <div key={idx} className="book-cell amount-cell">
+                      <div
+                        key={idx}
+                        className="book-cell amount-cell"
+                        onMouseEnter={() => {
+                          const grid = document.querySelector('.gift-book-grid');
+                          if (grid) grid.setAttribute('data-hover-col', idx.toString());
+                        }}
+                      >
                         {hasData ? (
                           <div className="amount-chinese">
                             {Utils.amountToChinese(gift.data!.amount)}
