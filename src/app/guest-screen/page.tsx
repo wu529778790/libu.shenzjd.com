@@ -77,18 +77,19 @@ export default function GuestScreen() {
 
         {/* 礼簿框架 - 使用 gift-book-frame 样式 */}
         <div className="gift-book-frame max-w-6xl mx-auto">
-          {/* 数据行 - 2行垂直布局：姓名、大写金额 */}
-          <div className="gift-book-grid">
-            {/* 第1行：姓名（竖排） */}
-            <div className="gift-book-row">
-              {Array.from({ length: 12 }).map((_, idx) => {
-                const gift = data.gifts[idx];
-                const isLatest = idx === data.gifts.length - 1;
-                return (
-                  <div
-                    key={idx}
-                    className={`book-cell name-cell ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}
-                  >
+          {/* 数据行 - 每列独立卡片布局 */}
+          <div className="gift-book-columns">
+            {Array.from({ length: 12 }).map((_, idx) => {
+              const gift = data.gifts[idx];
+              const isLatest = idx === data.gifts.length - 1;
+              return (
+                <div
+                  key={idx}
+                  className="gift-book-column"
+                  data-col-index={idx}
+                >
+                  {/* 姓名区域 */}
+                  <div className={`book-cell name-cell column-top ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}>
                     {gift ? (
                       <div className="name">
                         {gift.name.length === 2
@@ -99,29 +100,18 @@ export default function GuestScreen() {
                       <span className="text-gray-200">+</span>
                     )}
                   </div>
-                );
-              })}
-            </div>
 
-            {/* 第2行：大写金额（竖排） */}
-            <div className="gift-book-row">
-              {Array.from({ length: 12 }).map((_, idx) => {
-                const gift = data.gifts[idx];
-                const isLatest = idx === data.gifts.length - 1;
-                return (
-                  <div
-                    key={idx}
-                    className={`book-cell amount-cell ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}
-                  >
+                  {/* 金额区域 */}
+                  <div className={`book-cell amount-cell column-bottom ${isLatest ? 'bg-yellow-100 animate-pulse' : ''}`}>
                     {gift ? (
                       <div className="amount-chinese">
                         {Utils.amountToChinese(gift.amount)}
                       </div>
                     ) : <span className="text-gray-200">+</span>}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

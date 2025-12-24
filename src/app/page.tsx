@@ -36,10 +36,10 @@ export default function Home() {
       return;
     }
 
-    // 没有会话但有事件 → 显示事件管理界面
+    // 没有会话但有事件 → 显示事件管理界面，并默认选中第一个事件
     if (storedEvents.length > 0) {
       setShowPasswordInput(true);
-      setSelectedEvent(null);
+      setSelectedEvent(storedEvents[0]); // 默认选中第一个事件
     } else {
       router.replace("/setup");
     }
@@ -297,7 +297,7 @@ export default function Home() {
                   setPassword(e.target.value);
                   setError("");
                 }}
-                placeholder="请输入密码"
+                placeholder={selectedEvent ? "默认可能是 123456" : "请输入密码"}
                 className={`themed-ring ${error ? "border-red-500" : ""}`}
                 autoFocus
               />

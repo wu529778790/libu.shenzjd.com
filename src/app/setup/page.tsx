@@ -1,28 +1,28 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { CryptoService } from '@/lib/crypto';
-import { Utils } from '@/lib/utils';
-import { Event } from '@/types';
-import { GitHubService } from '@/lib/github';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { CryptoService } from "@/lib/crypto";
+import { Utils } from "@/lib/utils";
+import { Event } from "@/types";
+import { GitHubService } from "@/lib/github";
 
 export default function SetupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    name: "张三李四婚礼之喜（测试）",
     startDate: Utils.getCurrentDateTime().date,
-    startTime: '18:00',
+    startTime: "18:00",
     endDate: Utils.getCurrentDateTime().date,
-    endTime: '22:00',
-    password: '123456',
-    theme: 'festive' as 'festive' | 'solemn',
-    recorder: '',
+    endTime: "22:00",
+    password: "123456",
+    theme: "festive" as "festive" | "solemn",
+    recorder: "",
     githubSync: false,
-    githubOwner: '',
-    githubRepo: '',
-    githubToken: '',
+    githubOwner: "",
+    githubRepo: "",
+    githubToken: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,9 +42,11 @@ export default function SetupPage() {
       };
 
       // 保存到 localStorage
-      const events = JSON.parse(localStorage.getItem('giftlist_events') || '[]');
+      const events = JSON.parse(
+        localStorage.getItem("giftlist_events") || "[]"
+      );
       events.push(event);
-      localStorage.setItem('giftlist_events', JSON.stringify(events));
+      localStorage.setItem("giftlist_events", JSON.stringify(events));
 
       // 保存 GitHub 配置（如果有）
       if (formData.githubSync) {
@@ -53,14 +55,14 @@ export default function SetupPage() {
           repo: formData.githubRepo,
           token: formData.githubToken,
         };
-        localStorage.setItem('giftlist_github', JSON.stringify(githubConfig));
+        localStorage.setItem("giftlist_github", JSON.stringify(githubConfig));
 
         // 测试连接
         const github = new GitHubService(githubConfig);
         const connected = await github.testConnection();
         if (!connected) {
-          alert('GitHub 连接失败，将只使用本地存储');
-          localStorage.removeItem('giftlist_github');
+          alert("GitHub 连接失败，将只使用本地存储");
+          localStorage.removeItem("giftlist_github");
         } else {
           // 初始化仓库数据
           await github.syncEvents(events);
@@ -69,7 +71,7 @@ export default function SetupPage() {
 
       // 保存会话
       sessionStorage.setItem(
-        'currentEvent',
+        "currentEvent",
         JSON.stringify({
           event,
           password: formData.password,
@@ -78,12 +80,12 @@ export default function SetupPage() {
       );
 
       // 重置首页跳转标记，允许重新选择
-      sessionStorage.removeItem('has_redirected');
+      sessionStorage.removeItem("has_redirected");
 
-      router.replace('/main');
+      router.replace("/main");
     } catch (err) {
       console.error(err);
-      alert('创建失败: ' + err);
+      alert("创建失败: " + err);
     } finally {
       setLoading(false);
     }
@@ -102,7 +104,9 @@ export default function SetupPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 基本信息 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">事项名称</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              事项名称
+            </label>
             <input
               required
               value={formData.name}
@@ -116,7 +120,9 @@ export default function SetupPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">开始时间</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                开始时间
+              </label>
               <div className="flex gap-2">
                 <input
                   type="date"
@@ -139,7 +145,9 @@ export default function SetupPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">结束时间</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                结束时间
+              </label>
               <div className="flex gap-2">
                 <input
                   type="date"
@@ -164,7 +172,9 @@ export default function SetupPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">管理密码</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              管理密码
+            </label>
             <input
               required
               type="password"
@@ -182,30 +192,37 @@ export default function SetupPage() {
             <summary className="cursor-pointer text-sm font-medium text-gray-700 group-hover:text-gray-900 list-none">
               <div className="flex items-center">
                 <span>更多设置</span>
-                <span className="text-lg ml-1 transition-transform transform group-open:rotate-180">▼</span>
+                <span className="text-lg ml-1 transition-transform transform group-open:rotate-180">
+                  ▼
+                </span>
               </div>
             </summary>
             <div className="mt-4 p-4 card themed-border space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">界面风格</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  界面风格
+                </label>
                 <select
                   value={formData.theme}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      theme: e.target.value as 'festive' | 'solemn',
+                      theme: e.target.value as "festive" | "solemn",
                     })
                   }
-                  className="themed-ring"
-                >
+                  className="themed-ring">
                   <option value="festive">喜庆红 (喜事)</option>
                   <option value="solemn">肃穆灰 (白事)</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">为不同性质的事项选择合适的界面配色风格。</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  为不同性质的事项选择合适的界面配色风格。
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">记账人</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  记账人
+                </label>
                 <input
                   value={formData.recorder}
                   onChange={(e) =>
@@ -234,38 +251,53 @@ export default function SetupPage() {
                       数据将加密存储在你的 GitHub 仓库中，支持多设备同步
                     </p>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">GitHub 用户名</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        GitHub 用户名
+                      </label>
                       <input
                         required={formData.githubSync}
                         placeholder="owner"
                         value={formData.githubOwner}
                         onChange={(e) =>
-                          setFormData({ ...formData, githubOwner: e.target.value })
+                          setFormData({
+                            ...formData,
+                            githubOwner: e.target.value,
+                          })
                         }
                         className="themed-ring"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">仓库名</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        仓库名
+                      </label>
                       <input
                         required={formData.githubSync}
                         placeholder="repo"
                         value={formData.githubRepo}
                         onChange={(e) =>
-                          setFormData({ ...formData, githubRepo: e.target.value })
+                          setFormData({
+                            ...formData,
+                            githubRepo: e.target.value,
+                          })
                         }
                         className="themed-ring"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Personal Access Token</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Personal Access Token
+                      </label>
                       <input
                         required={formData.githubSync}
                         type="password"
                         placeholder="ghp_..."
                         value={formData.githubToken}
                         onChange={(e) =>
-                          setFormData({ ...formData, githubToken: e.target.value })
+                          setFormData({
+                            ...formData,
+                            githubToken: e.target.value,
+                          })
                         }
                         className="themed-ring"
                       />
@@ -282,9 +314,8 @@ export default function SetupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full themed-button-primary p-3 rounded-lg transition duration-300 font-bold hover-lift"
-          >
-            {loading ? '创建中...' : '创建并进入'}
+            className="w-full themed-button-primary p-3 rounded-lg transition duration-300 font-bold hover-lift">
+            {loading ? "创建中..." : "创建并进入"}
           </button>
         </form>
       </div>
