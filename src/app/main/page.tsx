@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Event, GiftData, GiftRecord } from "@/types";
 import { CryptoService } from "@/lib/crypto";
 import { Utils } from "@/lib/utils";
@@ -9,7 +7,7 @@ import { GitHubService } from "@/lib/github";
 import * as XLSX from "xlsx";
 
 export default function MainPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [event, setEvent] = useState<Event | null>(null);
   const [password, setPassword] = useState("");
   const [gifts, setGifts] = useState<
@@ -77,7 +75,7 @@ export default function MainPage() {
     // 检查会话
     const session = sessionStorage.getItem("currentEvent");
     if (!session) {
-      router.replace("/");
+      navigate("/", { replace: true });
       return;
     }
 
@@ -96,7 +94,7 @@ export default function MainPage() {
         setGithub(new GitHubService(config));
       } catch {}
     }
-  }, []); // 移除 router 依赖，避免重复执行
+  }, []);
 
   const loadData = async (eventId: string, pwd?: string) => {
     const records = JSON.parse(
@@ -298,11 +296,6 @@ export default function MainPage() {
   const themeClass =
     event.theme === "festive" ? "theme-festive" : "theme-solemn";
 
-  // 获取所有事件列表
-  const getAllEvents = () => {
-    return JSON.parse(localStorage.getItem("giftlist_events") || "[]");
-  };
-
   // 模态框辅助函数
   const showModal = (
     title: string,
@@ -327,29 +320,6 @@ export default function MainPage() {
     showModal(title, message, "alert");
   };
 
-  const showPrompt = (
-    title: string,
-    message: string,
-    defaultValue: string,
-    onConfirm: (value: string) => void,
-    onCancel?: () => void
-  ) => {
-    setModal({
-      isOpen: true,
-      title,
-      message,
-      type: "prompt",
-      onConfirm: () => {
-        const input = document.getElementById(
-          "prompt-input"
-        ) as HTMLInputElement;
-        if (input && onConfirm) onConfirm(input.value);
-      },
-      onCancel,
-      defaultValue,
-    });
-  };
-
   // 返回首页（清除会话）
   const handleGoHome = () => {
     showConfirm(
@@ -357,7 +327,7 @@ export default function MainPage() {
       "返回首页将清除当前会话，需要重新选择事件并输入密码。确定吗？",
       () => {
         sessionStorage.removeItem("currentEvent");
-        router.replace("/");
+        navigate("/", { replace: true });
       }
     );
   };

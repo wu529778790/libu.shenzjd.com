@@ -1,11 +1,9 @@
-"use client";
-
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { CryptoService } from "@/lib/crypto";
 
 export default function Home() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [showSessionChoice, setShowSessionChoice] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
@@ -13,13 +11,9 @@ export default function Home() {
   const [currentSessionEvent, setCurrentSessionEvent] = useState<any>(null);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // 简单的错误提示状态
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
     // 检查是否有事件存在
     const storedEvents = JSON.parse(
       localStorage.getItem("giftlist_events") || "[]"
@@ -41,9 +35,9 @@ export default function Home() {
       setShowPasswordInput(true);
       setSelectedEvent(storedEvents[0]); // 默认选中第一个事件
     } else {
-      router.replace("/setup");
+      navigate("/setup", { replace: true });
     }
-  }, [router]);
+  }, [navigate]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +66,7 @@ export default function Home() {
       );
 
       // 进入主界面
-      router.replace("/main");
+      navigate("/main", { replace: true });
     } catch (err) {
       console.error(err);
       setError("登录失败: " + err);
@@ -83,7 +77,7 @@ export default function Home() {
 
   // 处理继续使用当前会话
   const handleContinueSession = () => {
-    router.push("/main");
+    navigate("/main");
   };
 
   // 处理切换到其他事件
@@ -108,7 +102,7 @@ export default function Home() {
 
   // 处理创建新事件
   const handleCreateNewEvent = () => {
-    router.push("/setup");
+    navigate("/setup");
   };
 
   // 会话选择界面
@@ -189,7 +183,7 @@ export default function Home() {
               <button
                 onClick={() => {
                   sessionStorage.removeItem("currentEvent");
-                  router.replace("/");
+                  navigate("/", { replace: true });
                 }}
                 className="w-full themed-button-danger p-2 rounded text-sm">
                 🔄 返回首页重新选择
@@ -319,7 +313,7 @@ export default function Home() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => router.push("/setup")}
+                  onClick={() => navigate("/setup")}
                   className="flex-1 text-sm themed-button-secondary p-2 rounded hover-lift">
                   ✨ 创建新事件
                 </button>
@@ -332,7 +326,7 @@ export default function Home() {
                       )
                     ) {
                       localStorage.removeItem("giftlist_events");
-                      router.replace("/");
+                      navigate("/", { replace: true });
                     }
                   }}
                   className="flex-1 text-sm themed-button-danger p-2 rounded">

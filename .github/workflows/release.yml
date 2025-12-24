@@ -36,10 +36,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm next build
+        run: pnpm build
         env:
-          NEXT_PUBLIC_IS_EXPORT: 'true'
-          NEXT_TELEMETRY_DISABLED: '1'
+          VITE_TELEMETRY_DISABLED: '1'
 
       - name: Create release package
         run: |
@@ -48,13 +47,12 @@ jobs:
 
           # 复制构建产物
           echo "📦 复制构建文件..."
-          cp -r out release-package/
+          cp -r dist/* release-package/
 
           # 复制配置文件（只复制必要的）
           echo "📝 复制配置文件..."
           cp package.json release-package/ 2>/dev/null || true
           cp README.md release-package/ 2>/dev/null || true
-          cp .env.example release-package/ 2>/dev/null || true
 
           # 生成版本信息
           TAG_NAME="${{ github.ref_name || inputs.tag_name }}"
@@ -71,42 +69,42 @@ jobs:
           # 礼簿系统 - 部署说明
 
           ## 📦 包含内容
-          - `out/` - Next.js 构建好的静态文件
+          - `index.html` - 入口 HTML 文件
+          - `assets/` - 静态资源（JS、CSS）
           - `package.json` - 项目配置
           - `README-部署说明.md` - 本说明文件
           - `VERSION.txt` - 版本信息
 
           ## 🚀 使用方法
 
-          ### 方法1: 本地运行（推荐）
+          ### 方法1: 直接打开（推荐 - 无需服务器！）
           ```bash
           # 1. 解压
           tar -xzf release-package.tar.gz
           cd release-package
 
-          # 2. 启动服务（使用 npx serve）
-          cd out
-          npx serve .
-
-          # 3. 浏览器访问
-          # http://localhost:3000
+          # 2. 直接用浏览器打开 index.html
+          # 双击 index.html 或在浏览器中按 Ctrl+O 选择文件
+          # 支持 file:// 协议，无需启动服务器
           ```
 
-          ### 方法2: 部署到 GitHub Pages
-          1. 进入仓库设置 -> Pages
-          2. 选择 `gh-pages` 分支或 `out` 目录
-          3. 保存并等待部署完成
+          ### 方法2: 本地服务器运行
+          ```bash
+          # 使用任意静态服务器
+          cd release-package
+          npx serve .
+          # 浏览器访问: http://localhost:3000
+          ```
 
-          ### 方法3: 部署到 Vercel
-          1. 登录 [Vercel](https://vercel.com)
-          2. 导入仓库
-          3. 自动检测为 Next.js 项目
-          4. 部署
+          ### 方法3: 部署到 GitHub Pages
+          1. 进入仓库设置 -> Pages
+          2. 选择 `gh-pages` 分支或 `dist` 目录
+          3. 保存并等待部署完成
 
           ### 方法4: 部署到自定义服务器
           ```bash
-          # 将 out 目录上传到服务器
-          scp -r out/* user@your-server:/var/www/html/
+          # 将 dist 目录上传到服务器
+          scp -r dist/* user@your-server:/var/www/html/
           ```
 
           ## 🔧 首次使用配置
@@ -120,8 +118,7 @@ jobs:
           ```bash
           pnpm dev        # 开发服务器
           pnpm build      # 构建
-          pnpm start      # 生产运行
-          pnpm lint      # 代码检查
+          pnpm preview    # 预览构建
           ```
 
           ## 🔒 安全提示
@@ -168,7 +165,7 @@ jobs:
             ## 🎉 礼簿系统 ${{ steps.get_tag.outputs.tag_name }}
 
             ### 📦 包含内容
-            - ✅ 完整的构建产物 (out/)
+            - ✅ 完整的构建产物 (dist/)
             - ✅ 源代码和配置文件
             - ✅ 详细的部署说明
 
@@ -184,30 +181,39 @@ jobs:
 
             ### 🔧 使用方式
 
-            **本地运行**
+            **直接打开（无需服务器！）**
             ```bash
             tar -xzf release-package.tar.gz
-            cd release-package/out
+            cd release-package
+            # 双击 index.html 或在浏览器打开
+            # 支持 file:// 协议
+            ```
+
+            **本地服务器运行**
+            ```bash
+            cd release-package
             npx serve .
             # http://localhost:3000
             ```
 
             **部署到服务器**
             ```bash
-            # 解压后将 out 目录上传到服务器
-            # 或部署到 GitHub Pages / Vercel
+            # 将 dist 目录上传到服务器
+            # 或部署到 GitHub Pages
             ```
 
             **访问地址**
             - 首页: `/`
             - 测试数据: `/test-data`
             - 事件设置: `/setup`
+            - 副屏: `/guest-screen`
 
             ### 📋 默认配置
             - 默认密码: `123456`
             - 支持多事件管理
             - 支持数据加密存储
             - 支持副屏展示
+            - ✨ 新增：支持直接 HTML 打开（无需服务器）
 
           files: release-package.tar.gz
           draft: false

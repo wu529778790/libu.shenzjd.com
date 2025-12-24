@@ -3,6 +3,7 @@
 /.pnp
 .pnp.js
 
+/dist
 # Testing
 /coverage
 

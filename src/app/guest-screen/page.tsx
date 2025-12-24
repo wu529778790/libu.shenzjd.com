@@ -1,93 +1,87 @@
-'use client';
+import { useEffect, useState } from "react";
+import { Utils } from "@/lib/utils";
 
-import { useEffect, useState } from 'react';
-import { GiftData } from '@/types';
-import { Utils } from '@/lib/utils';
+interface GiftData {
+  name: string;
+  amount: number;
+  type: '现金' | '微信' | '支付宝' | '其他';
+  remark?: string;
+  timestamp: string;
+  abolished?: boolean;
+}
+
+interface SyncData {
+  eventName: string;
+  theme: string;
+  gifts: GiftData[];
+}
 
 export default function GuestScreen() {
-  const [data, setData] = useState<{
-    eventName: string;
-    theme: string;
-    gifts: GiftData[];
-  } | null>(null);
+  const [data, setData] = useState<SyncData | null>(null);
 
   useEffect(() => {
-    // 立即尝试读取一次数据（不等待轮询）
-    const tryReadData = () => {
-      const stored = localStorage.getItem('guest_screen_data');
-      if (stored) {
-        setData(JSON.parse(stored));
-        return true;
+    // 监听 localStorage 变化
+    const handleStorageChange = () => {
+      const syncData = localStorage.getItem("guest_screen_data");
+      if (syncData) {
+        try {
+          const parsed = JSON.parse(syncData) as SyncData;
+          setData(parsed);
+        } catch (e) {
+          console.error("解析同步数据失败:", e);
+        }
       }
-      return false;
     };
 
-    // 首次立即尝试
-    if (!tryReadData()) {
-      // 如果没有数据，增加 500ms 后的重试
-      setTimeout(tryReadData, 500);
-    }
+    // 初始加载
+    handleStorageChange();
 
-    // 轮询读取 localStorage（作为后备机制）
-    const interval = setInterval(() => {
-      tryReadData();
-    }, 1000);
+    // 定时检查更新（每2秒）
+    const interval = setInterval(handleStorageChange, 2000);
 
-    // 监听 postMessage
-    window.addEventListener('message', (e) => {
-      if (e.data.type === 'guest_screen_update') {
-        setData(e.data.data);
-      }
-    });
+    // 监听 storage 事件（其他标签页的修改）
+    window.addEventListener("storage", handleStorageChange);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   if (!data) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center fade-in">
-          <h1 className="text-2xl font-bold mb-4 themed-header">等待主屏数据...</h1>
-          <p className="text-gray-600">请确保主屏已打开并录入数据</p>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold themed-header mb-4">副屏展示</h1>
+          <p className="text-gray-600">等待主屏数据同步...</p>
+          <p className="text-xs text-gray-400 mt-2">
+            请在主屏录入数据后自动同步
+          </p>
         </div>
       </div>
     );
   }
 
-  // 应用主题
-  const themeClass = data.theme === 'theme-festive' ? 'theme-festive' : 'theme-solemn';
+  const themeClass = data.theme === "theme-festive" ? "theme-festive" : "theme-solemn";
 
   return (
-    <div className={`min-h-screen ${themeClass} bg-gray-50`}>
-      {/* 控制栏 */}
-      <div className="fixed top-4 right-4 flex gap-2 no-print z-50">
-        <button
-          onClick={() => document.documentElement.requestFullscreen()}
-          className="themed-button-secondary border px-3 py-1 rounded text-sm"
-        >
-          全屏
-        </button>
-      </div>
-
-      <div className="p-8">
+    <div className={`min-h-screen ${themeClass}`}>
+      <div className="max-w-7xl mx-auto p-4">
         {/* 标题 */}
-        <h1 className="text-4xl font-bold text-center mb-8 themed-header font-kaiti">
-          {data.eventName}
-        </h1>
+        <div className="card themed-bg-light p-4 mb-4 text-center">
+          <h1 className="text-3xl font-bold themed-header">{data.eventName}</h1>
+          <p className="text-sm text-gray-600 mt-1">实时礼金展示</p>
+        </div>
 
-        {/* 礼簿框架 - 使用 gift-book-frame 样式 */}
-        <div className="gift-book-frame max-w-6xl mx-auto">
-          {/* 数据行 - 每列独立卡片布局 */}
+        {/* 最新礼金列表 */}
+        <div className="gift-book-frame">
           <div className="gift-book-columns">
             {Array.from({ length: 12 }).map((_, idx) => {
               const gift = data.gifts[idx];
               const isLatest = idx === data.gifts.length - 1;
+
               return (
-                <div
-                  key={idx}
-                  className="gift-book-column"
-                  data-col-index={idx}
-                >
+                <div key={idx} className="gift-book-column" data-col-index={idx}>
                   {/* 姓名区域 */}
                   <div className={`book-cell name-cell column-top ${isLatest ? 'bg-yellow-100' : ''}`}>
                     {gift ? (
@@ -97,7 +91,7 @@ export default function GuestScreen() {
                           : gift.name}
                       </div>
                     ) : (
-                      <span className="text-gray-200">+</span>
+                      <span className="text-gray-300">+</span>
                     )}
                   </div>
 
@@ -107,14 +101,37 @@ export default function GuestScreen() {
                       <div className="amount-chinese">
                         {Utils.amountToChinese(gift.amount)}
                       </div>
-                    ) : <span className="text-gray-200">+</span>}
+                    ) : (
+                      <span className="text-gray-300">+</span>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
+
+        {/* 统计信息 */}
+        <div className="card p-4 mt-4 grid grid-cols-2 gap-4 text-center">
+          <div>
+            <div className="text-sm text-gray-600">最新记录</div>
+            <div className="text-2xl font-bold themed-text">
+              {data.gifts.length > 0 ? data.gifts[data.gifts.length - 1].name : "-"}
+            </div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">最新金额</div>
+            <div className="text-2xl font-bold themed-text">
+              {data.gifts.length > 0 ? `¥${data.gifts[data.gifts.length - 1].amount.toFixed(2)}` : "-"}
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center text-xs text-gray-400 mt-4">
+          自动同步中 | 最后更新: {new Date().toLocaleTimeString()}
+        </div>
       </div>
     </div>
   );
 }
+
