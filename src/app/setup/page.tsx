@@ -10,12 +10,12 @@ import Input from "@/components/ui/Input";
 export default function Setup() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "",
-    startDate: "",
-    endDate: "",
+    name: "张三 & 李四 婚礼", // 默认事件名称
+    startDate: new Date().toISOString().split('T')[0], // 默认为今天
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 默认为一周后
     password: "123456", // 默认密码
     theme: "festive" as "festive" | "solemn",
-    recorder: "",
+    recorder: "管理员", // 默认记账人
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -78,7 +78,18 @@ export default function Setup() {
       ];
       localStorage.setItem(`giftlist_gifts_${event.id}`, JSON.stringify(testGifts));
 
-      navigate("/test-data", { state: { eventId: event.id, password: formData.password } });
+      // 保存会话信息
+      sessionStorage.setItem(
+        "currentEvent",
+        JSON.stringify({
+          event: event,
+          password: formData.password,
+          timestamp: new Date().toISOString(),
+        })
+      );
+
+      // 直接跳转到主页面
+      navigate("/main", { replace: true });
     } catch (err) {
       console.error(err);
       setError("创建事件失败: " + err);
