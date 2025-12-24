@@ -6,19 +6,15 @@ import PageLayout from "@/components/layout/PageLayout";
 import FormLayout from "@/components/layout/FormLayout";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { DEFAULT_VALUES } from "@/constants/app";
 
 export default function Setup() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     startDate: "",
-    startTime: "",
     endDate: "",
-    endTime: "",
-    password: DEFAULT_VALUES.PASSWORD as string, // 使用默认密码
-    confirmPassword: DEFAULT_VALUES.PASSWORD as string,
-    theme: DEFAULT_VALUES.THEME as "festive" | "solemn",
+    password: "123456", // 默认密码
+    theme: "festive" as "festive" | "solemn",
     recorder: "",
   });
   const [loading, setLoading] = useState(false);
@@ -30,20 +26,21 @@ export default function Setup() {
     setError("");
 
     try {
-      if (formData.password !== formData.confirmPassword) {
-        setError("两次输入的密码不一致！");
-        setLoading(false);
-        return;
-      }
-
       if (!formData.name || !formData.startDate || !formData.endDate) {
         setError("请填写所有必填项！");
         setLoading(false);
         return;
       }
 
-      const startDateTime = `${formData.startDate}T${formData.startTime || "00:00"}`;
-      const endDateTime = `${formData.endDate}T${formData.endTime || "23:59"}`;
+      if (new Date(formData.startDate) > new Date(formData.endDate)) {
+        setError("结束日期不能早于开始日期！");
+        setLoading(false);
+        return;
+      }
+
+      // 使用完整的日期字符串作为时间（默认为当天的00:00和23:59）
+      const startDateTime = `${formData.startDate}T00:00:00`;
+      const endDateTime = `${formData.endDate}T23:59:59`;
 
       const event: Event = {
         id: Date.now().toString(36) + Math.random().toString(36).substr(2),
@@ -94,27 +91,27 @@ export default function Setup() {
     <PageLayout title="电子礼簿系统" subtitle="创建新事件，设置活动信息和管理密码">
       <FormLayout title="创建新事件">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="事件名称 *"
-              type="text"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="如：张三 & 李四 婚礼"
-              required
-            />
-            <Input
-              label="记账人（选填）"
-              type="text"
-              value={formData.recorder}
-              onChange={(e) =>
-                setFormData({ ...formData, recorder: e.target.value })
-              }
-              placeholder="记账人姓名"
-            />
-          </div>
+          <Input
+            label="事件名称 *"
+            type="text"
+            value={formData.name}
+            onChange={(e) =>
+              setFormData({ ...formData, name: e.target.value })
+            }
+            placeholder="如：张三 & 李四 婚礼"
+            required
+            autoFocus
+          />
+
+          <Input
+            label="记账人（选填）"
+            type="text"
+            value={formData.recorder}
+            onChange={(e) =>
+              setFormData({ ...formData, recorder: e.target.value })
+            }
+            placeholder="记账人姓名"
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
@@ -127,17 +124,6 @@ export default function Setup() {
               required
             />
             <Input
-              label="开始时间"
-              type="time"
-              value={formData.startTime}
-              onChange={(e) =>
-                setFormData({ ...formData, startTime: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
               label="结束日期 *"
               type="date"
               value={formData.endDate}
@@ -146,38 +132,18 @@ export default function Setup() {
               }
               required
             />
-            <Input
-              label="结束时间"
-              type="time"
-              value={formData.endTime}
-              onChange={(e) =>
-                setFormData({ ...formData, endTime: e.target.value })
-              }
-            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="管理密码 *"
-              type="password"
-              value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
-              placeholder="建议使用 123456"
-              required
-            />
-            <Input
-              label="确认密码 *"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e) =>
-                setFormData({ ...formData, confirmPassword: e.target.value })
-              }
-              placeholder="再次输入密码"
-              required
-            />
-          </div>
+          <Input
+            label="管理密码 *"
+            type="password"
+            value={formData.password}
+            onChange={(e) =>
+              setFormData({ ...formData, password: e.target.value })
+            }
+            placeholder="建议使用 123456"
+            required
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
