@@ -1,0 +1,221 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm next build
+        env:
+          NEXT_PUBLIC_IS_EXPORT: 'true'
+
+      - name: Create release package
+        run: |
+          # 创建打包目录
+          mkdir -p release-package
+
+          # 复制构建产物
+          echo "📦 复制构建文件..."
+          cp -r out release-package/
+
+          # 复制配置文件
+          echo "📝 复制配置文件..."
+          cp package.json release-package/ 2>/dev/null || true
+          cp pnpm-lock.yaml release-package/ 2>/dev/null || true
+          cp README.md release-package/ 2>/dev/null || true
+          cp .env.example release-package/ 2>/dev/null || true
+
+          # 生成版本信息
+          TAG_NAME="${{ github.ref_name || inputs.tag_name }}"
+          cat > release-package/VERSION.txt << EOF
+          礼簿系统版本: $TAG_NAME
+          构建时间: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          Commit: ${{ github.sha }}
+          仓库: ${{ github.repository }}
+          构建者: ${{ github.actor }}
+          EOF
+
+          # 生成部署说明
+          cat > release-package/README-部署说明.md << 'EOF'
+          # 礼簿系统 - 部署说明
+
+          ## 📦 包含内容
+          - `out/` - Next.js 构建好的静态文件
+          - `package.json` - 项目配置
+          - `README-部署说明.md` - 本说明文件
+          - `VERSION.txt` - 版本信息
+
+          ## 🚀 部署方法
+
+          ### 方法1: 部署到 GitHub Pages (推荐)
+          1. 进入仓库设置 -> Pages
+          2. 选择 `gh-pages` 分支或 `out` 目录
+          3. 保存并等待部署完成
+
+          ### 方法2: 部署到 Vercel
+          1. 登录 [Vercel](https://vercel.com)
+          2. 导入仓库
+          3. 自动检测为 Next.js 项目
+          4. 部署
+
+          ### 方法3: 部署到其他静态托管
+          1. 将 `out/` 目录内容上传到你的服务器
+          2. 配置 Web 服务器（Nginx/Apache）
+          3. 确保支持 SPA 路由重写
+
+          ### 方法4: 本地运行
+          ```bash
+          # 安装依赖
+          pnpm install
+
+          # 开发模式
+          pnpm dev
+
+          # 生产模式
+          pnpm start
+          ```
+
+          ## 🔧 首次使用配置
+
+          1. 访问 `/test-data` 生成测试数据
+          2. 或访问 `/setup` 创建新事件
+          3. 默认密码: `123456`
+
+          ## 📝 常用命令
+
+          ```bash
+          pnpm dev        # 开发服务器
+          pnpm build      # 构建
+          pnpm start      # 生产运行
+          pnpm lint      # 代码检查
+          ```
+
+          ## 🔒 安全提示
+
+          - 首次使用请修改默认密码
+          - 定期备份 localStorage 数据
+          - 生产环境建议配置 GitHub 同步
+
+          ## 🆘 问题反馈
+
+          如遇问题，请查看控制台错误信息或提交 Issue
+          EOF
+
+          # 压缩打包
+          echo "🗜️ 压缩打包中..."
+          tar -czf release-package.tar.gz -C release-package .
+          echo "✅ 打包完成: release-package.tar.gz"
+
+      - name: Get or Create Tag
+        id: get_tag
+        run: |
+          TAG_NAME="${{ github.ref_name || inputs.tag_name }}"
+          if [ -z "$TAG_NAME" ]; then
+            # 如果没有 tag，使用日期和时间生成
+            TAG_NAME="v$(date +%Y%m%d-%H%M%S)"
+            echo "创建新 tag: $TAG_NAME"
+            git tag $TAG_NAME
+            git push origin $TAG_NAME
+          fi
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_tag.outputs.tag_name }}
+          name: Release ${{ steps.get_tag.outputs.tag_name }}
+          body: |
+            ## 🎉 礼簿系统 ${{ steps.get_tag.outputs.tag_name }}
+
+            ### 📦 包含内容
+            - ✅ 完整的构建产物 (out/)
+            - ✅ 源代码和配置文件
+            - ✅ 详细的部署说明
+
+            ### 🚀 快速开始
+            1. 下载 `release-package.tar.gz`
+            2. 解压到目标目录
+            3. 按照 `README-部署说明.md` 操作
+
+            ### 📝 构建信息
+            - **构建时间**: ${{ github.event.head_commit.timestamp || now() }}
+            - **Commit**: ${{ github.sha }}
+            - **构建者**: ${{ github.actor }}
+            - **分支**: ${{ github.ref_name }}
+
+            ### 🔧 使用方式
+
+            **直接部署 (推荐)**
+            ```bash
+            # 解压后直接将 out 目录上传到服务器
+            # 或部署到 GitHub Pages / Vercel
+            ```
+
+            **本地运行**
+            ```bash
+            pnpm install
+            pnpm dev
+            ```
+
+            **访问地址**
+            - 首页: `/`
+            - 测试数据: `/test-data`
+            - 事件设置: `/setup`
+
+            ### 📋 默认配置
+            - 默认密码: `123456`
+            - 支持多事件管理
+            - 支持数据加密存储
+            - 支持副屏展示
+
+          files: release-package.tar.gz
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Additional Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_tag.outputs.tag_name }}
+          files: |
+            out/**
+          token: ${{ secrets.GITHUB_TOKEN }}
+          append_body: true
+
+      - name: Notify Success
+        run: |
+          echo "🎉 Release 发布成功!"
+          echo "📦 Tag: ${{ steps.get_tag.outputs.tag_name }}"
+          echo "🔗 下载地址: https://github.com/${{ github.repository }}/releases/tag/${{ steps.get_tag.outputs.tag_name }}"
