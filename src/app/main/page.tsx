@@ -225,9 +225,115 @@ export default function MainPage() {
   // 根据主题应用不同的容器类
   const themeClass = event.theme === 'festive' ? 'theme-festive' : 'theme-solemn';
 
+  // 获取所有事件列表
+  const getAllEvents = () => {
+    return JSON.parse(localStorage.getItem('giftlist_events') || '[]');
+  };
+
+  // 退出到首页
+  const handleLogout = () => {
+    if (confirm('确定要退出吗？当前会话将被清除，下次登录需要重新输入密码。')) {
+      sessionStorage.removeItem('currentEvent');
+      router.replace('/');
+    }
+  };
+
+  // 切换到其他事件
+  const handleSwitchEvent = () => {
+    const allEvents = getAllEvents();
+    if (allEvents.length <= 1) {
+      alert('当前只有一个事件，无法切换。如需创建新事件，请先退出后在首页操作。');
+      return;
+    }
+
+    // 弹出选择对话框
+    const eventNames = allEvents.map((e: any) => e.name).join('\n');
+    const selectedName = prompt(`请选择要切换的事件（输入完整名称）:\n\n${eventNames}\n\n当前事件：${event.name}`);
+
+    if (!selectedName || selectedName.trim() === '') return;
+
+    const targetEvent = allEvents.find((e: any) => e.name === selectedName.trim());
+    if (!targetEvent) {
+      alert('事件名称输入错误，请检查拼写和空格。');
+      return;
+    }
+
+    if (targetEvent.id === event.id) {
+      alert('当前已在该事件中。');
+      return;
+    }
+
+    // 验证密码
+    const pwd = prompt(`请输入 "${targetEvent.name}" 的管理密码：`);
+    if (!pwd) return;
+
+    // 验证密码
+    const hash = CryptoService.hash(pwd);
+    if (hash !== targetEvent.passwordHash) {
+      alert('密码错误！');
+      return;
+    }
+
+    // 更新会话
+    sessionStorage.setItem('currentEvent', JSON.stringify({
+      event: targetEvent,
+      password: pwd,
+      timestamp: Date.now()
+    }));
+
+    // 重新加载页面
+    window.location.reload();
+  };
+
+  // 返回首页（清除会话）
+  const handleGoHome = () => {
+    if (confirm('返回首页将清除当前会话，需要重新登录。确定吗？')) {
+      sessionStorage.removeItem('currentEvent');
+      router.replace('/');
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-gray-50 ${themeClass}`}>
       <div className="max-w-7xl mx-auto p-4 space-y-4">
+
+        {/* 🔥 新增：导航控制栏 */}
+        <div className="card themed-bg-light p-3 no-print">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            {/* 当前事件信息 */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="font-bold themed-text text-sm">当前：</span>
+              <span className="text-sm truncate" title={event.name}>{event.name}</span>
+            </div>
+
+            {/* 操作按钮组 */}
+            <div className="flex gap-2 flex-wrap flex-shrink-0">
+              {getAllEvents().length > 1 && (
+                <button
+                  onClick={handleSwitchEvent}
+                  className="px-3 py-1 themed-button-secondary rounded text-sm hover-lift"
+                >
+                  切换事件
+                </button>
+              )}
+
+              <button
+                onClick={handleGoHome}
+                className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 hover-lift"
+              >
+                返回首页
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 hover-lift"
+              >
+                退出
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* 头部 */}
         <div className="card themed-bg-light p-4">
           <div className="flex justify-between items-center flex-wrap gap-4">
