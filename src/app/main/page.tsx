@@ -729,9 +729,9 @@ export default function MainPage() {
           </div>
         </div>
 
-        {/* 模态框 */}
+        {/* 模态框 - 确认/提示弹窗使用更高层级 */}
         {modal.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
               {/* 标题栏 */}
               <div className="flex items-center gap-3 mb-4">
