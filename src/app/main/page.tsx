@@ -255,14 +255,6 @@ export default function MainPage() {
           </div>
         </div>
 
-        {/* 简洁统计栏 */}
-        <div className="card p-2 flex justify-between items-center text-sm">
-          <div className="flex items-center gap-4">
-            <span className="font-bold text-gray-600">总金额: <span className="themed-text ml-1">{Utils.formatCurrency(totalAmount)}</span></span>
-            <span className="font-bold text-gray-600">总人数: <span className="themed-text ml-1">{totalGivers}</span></span>
-          </div>
-          <div className="font-bold text-gray-600">第 {currentPage}/{totalPages} 页</div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左侧：录入表单 */}
