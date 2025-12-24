@@ -88,18 +88,18 @@ scp -r out/* user@your-server:/var/www/html/
 #### 选项D: 本地运行（推荐）
 
 ```bash
-# 1. 进入 out 目录
+# 1. 解压发布包
+tar -xzf release-package.tar.gz
+cd release-package
+
+# 2. 进入 out 目录
 cd out
 
-# 2. 启动简单的 HTTP 服务器
-# Python 3:
-python3 -m http.server 8000
+# 3. 启动服务
+npx serve .
 
-# 或 Node.js (需要先安装: npm install -g serve):
-serve .
-
-# 3. 浏览器访问
-# http://localhost:8000
+# 4. 浏览器访问
+# http://localhost:3000
 ```
 
 > **注意**: 由于浏览器安全限制，需要通过 HTTP 服务器访问，不能直接双击 HTML 文件打开。

@@ -78,24 +78,18 @@ jobs:
 
           ## 🚀 使用方法
 
-          ### 方法1: 本地直接运行（推荐）
+          ### 方法1: 本地运行（推荐）
           ```bash
           # 1. 解压
           tar -xzf release-package.tar.gz
           cd release-package
 
-          # 2. 进入 out 目录
+          # 2. 启动服务（使用 npx serve）
           cd out
-
-          # 3. 启动简单的 HTTP 服务器
-          # Python 3:
-          python3 -m http.server 8000
-
-          # 或使用 Node.js:
           npx serve .
 
-          # 4. 浏览器访问
-          # http://localhost:8000
+          # 3. 浏览器访问
+          # http://localhost:3000
           ```
 
           ### 方法2: 部署到 GitHub Pages
@@ -190,16 +184,18 @@ jobs:
 
             ### 🔧 使用方式
 
-            **直接部署 (推荐)**
-            ```bash
-            # 解压后直接将 out 目录上传到服务器
-            # 或部署到 GitHub Pages / Vercel
-            ```
-
             **本地运行**
             ```bash
-            pnpm install
-            pnpm dev
+            tar -xzf release-package.tar.gz
+            cd release-package/out
+            npx serve .
+            # http://localhost:3000
+            ```
+
+            **部署到服务器**
+            ```bash
+            # 解压后将 out 目录上传到服务器
+            # 或部署到 GitHub Pages / Vercel
             ```
 
             **访问地址**
