@@ -1,25 +1,25 @@
-name: Deploy to GitHub Pages
+name: Deploy to GitHub Pages (Simple)
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
+# 设置权限
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # 这样可以在部署时保留构建产物
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -35,39 +35,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build and Export
+      - name: Build
         run: pnpm next build
         env:
           NEXT_PUBLIC_IS_EXPORT: 'true'
 
       - name: Verify output
         run: |
-          ls -la out/
-          echo "=== Checking for index.html ==="
-          if [ -f out/index.html ]; then
-            echo "✓ index.html exists"
-          else
-            echo "✗ index.html missing"
-            echo "=== Listing .next directory ==="
-            ls -la .next/
+          if [ ! -f out/index.html ]; then
+            echo "❌ Build failed - index.html not found"
+            ls -la out/ || echo "out directory not found"
+            ls -la .next/ || echo ".next directory not found"
             exit 1
           fi
+          echo "✅ Build successful"
+          ls -la out/
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./out
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          keep_files: false
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
