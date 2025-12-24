@@ -5,6 +5,11 @@ import { CryptoService } from "@/lib/crypto";
 import { Utils } from "@/lib/utils";
 import { GitHubService } from "@/lib/github";
 import * as XLSX from "xlsx";
+import MainLayout from "@/components/layout/MainLayout";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Card from "@/components/ui/Card";
+import { formatDateTime } from "@/utils/format";
 
 export default function MainPage() {
   const navigate = useNavigate();
@@ -292,10 +297,6 @@ export default function MainPage() {
 
   if (!event) return null;
 
-  // 根据主题应用不同的容器类
-  const themeClass =
-    event.theme === "festive" ? "theme-festive" : "theme-solemn";
-
   // 模态框辅助函数
   const showModal = (
     title: string,
@@ -448,96 +449,79 @@ export default function MainPage() {
     showAlert("修改成功", "记录已更新");
   };
 
-
   return (
-    <div className={`min-h-screen bg-gray-50 ${themeClass}`}>
-      <div className="max-w-7xl mx-auto p-4 space-y-4">
+    <MainLayout theme={event.theme}>
+      <div className="space-y-4">
         {/* 头部 */}
-        <div className="card themed-bg-light p-4">
+        <Card className="themed-bg-light p-4">
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
               <h1 className="text-2xl font-bold themed-header">{event.name}</h1>
               <p className="text-sm text-gray-600 mt-1">
-                {(() => {
-                  const formatEventTime = (dt: string) => {
-                    const date = new Date(dt);
-                    const pad = (num: number) =>
-                      num.toString().padStart(2, "0");
-                    return `${date.getFullYear()}-${pad(
-                      date.getMonth() + 1
-                    )}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
-                      date.getMinutes()
-                    )}`;
-                  };
-                  return `${formatEventTime(
-                    event.startDateTime
-                  )} ~ ${formatEventTime(event.endDateTime)}`;
-                })()}
+                {formatDateTime(event.startDateTime)} ~ {formatDateTime(event.endDateTime)}
                 {event.recorder && ` | 记账人: ${event.recorder}`}
               </p>
             </div>
             <div className="flex gap-2 flex-wrap no-print">
-              <button
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={handleGoHome}
-                className="px-3 py-1 themed-button-danger text-sm">
+              >
                 返回首页
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
                 onClick={exportPDF}
-                className="themed-button-primary px-4 py-2 rounded-lg hover-lift">
+              >
                 打印/PDF
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={exportExcel}
-                className="themed-button-secondary px-4 py-2 rounded-lg hover-lift">
+              >
                 导出Excel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={openGuestScreen}
-                className="themed-button-secondary px-4 py-2 rounded-lg hover-lift">
+              >
                 开启副屏
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左侧：录入表单 */}
           <div className="lg:col-span-1">
-            <div className="card p-6">
+            <Card className="p-6">
               <h2 className="text-2xl font-bold mb-4 text-center border-b pb-2 themed-header">
                 礼金录入
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    姓名
-                  </label>
-                  <input
-                    id="name-input"
-                    required
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="来宾姓名"
-                    className="themed-ring"
-                    autoFocus
-                  />
-                </div>
+                <Input
+                  label="姓名"
+                  id="name-input"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="来宾姓名"
+                  required
+                  autoFocus
+                />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    金额
-                  </label>
-                  <input
-                    required
+                  <Input
+                    label="金额"
                     type="number"
                     step="0.01"
                     value={formData.amount}
                     onChange={(e) => handleAmountChange(e.target.value)}
                     placeholder="金额 (元)"
-                    className="themed-ring"
+                    required
                   />
                   {chineseAmount && (
                     <div className="text-sm text-gray-600 mt-1 text-right themed-text">
@@ -574,26 +558,24 @@ export default function MainPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    备注
-                  </label>
-                  <input
-                    value={formData.remark}
-                    onChange={(e) =>
-                      setFormData({ ...formData, remark: e.target.value })
-                    }
-                    placeholder="备注内容（选填）"
-                    className="themed-ring"
-                  />
-                </div>
+                <Input
+                  label="备注"
+                  type="text"
+                  value={formData.remark}
+                  onChange={(e) =>
+                    setFormData({ ...formData, remark: e.target.value })
+                  }
+                  placeholder="备注内容（选填）"
+                />
 
-                <button
+                <Button
                   type="submit"
+                  variant="primary"
+                  className="w-full p-3 rounded-lg font-bold text-lg"
                   disabled={loading}
-                  className="w-full themed-button-primary p-3 rounded-lg font-bold text-lg hover-lift">
+                >
                   {loading ? "录入中..." : "确认录入"}
-                </button>
+                </Button>
               </form>
 
               {/* 快捷统计 */}
@@ -609,7 +591,7 @@ export default function MainPage() {
                   <span className="font-bold themed-text">{totalGivers}</span>
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* 右侧：礼簿展示 */}
@@ -629,23 +611,27 @@ export default function MainPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button
+                  <Button
+                    variant="primary"
+                    className="w-7 h-7 rounded !p-0"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="themed-button-primary w-7 h-7 rounded disabled:opacity-30 disabled:cursor-not-allowed hover:bg-opacity-90">
+                  >
                     ←
-                  </button>
+                  </Button>
                   <span className="font-bold text-gray-700 px-1">
                     {currentPage}/{totalPages}
                   </span>
-                  <button
+                  <Button
+                    variant="primary"
+                    className="w-7 h-7 rounded !p-0"
                     onClick={() =>
                       setCurrentPage((p) => Math.min(totalPages, p + 1))
                     }
                     disabled={currentPage === totalPages}
-                    className="themed-button-primary w-7 h-7 rounded disabled:opacity-30 disabled:cursor-not-allowed hover:bg-opacity-90">
+                  >
                     →
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -745,32 +731,28 @@ export default function MainPage() {
               {/* 操作按钮 */}
               <div className="flex gap-3 justify-end">
                 {modal.type === "confirm" && (
-                  <button
+                  <Button
+                    variant="danger"
                     onClick={() => {
                       modal.onCancel?.();
                       setModal({ ...modal, isOpen: false });
                     }}
-                    className="px-4 py-2 rounded-lg font-semibold themed-button-danger transition-all transform hover:scale-105 active:scale-95">
+                  >
                     取消
-                  </button>
+                  </Button>
                 )}
 
-                <button
+                <Button
                   onClick={() => {
                     if (modal.type === "confirm" || modal.type === "prompt") {
                       modal.onConfirm?.();
-                    } else {
                       modal.onCancel?.();
                     }
                     setModal({ ...modal, isOpen: false });
                   }}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all transform hover:scale-105 active:scale-95 ${
-                    modal.type === "confirm"
-                      ? "themed-button-primary"
-                      : "themed-button-primary"
-                  }`}>
+                >
                   {modal.type === "confirm" ? "确定" : "确定"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -832,42 +814,40 @@ export default function MainPage() {
 
                   {/* 操作按钮 */}
                   <div className="flex gap-3 mt-6 pt-4 border-t">
-                    <button
+                    <Button
+                      variant="primary"
+                      className="flex-1"
                       onClick={() => setEditFormData({ ...editFormData, isEditing: true })}
-                      className="flex-1 themed-button-primary py-2 rounded-lg font-bold hover-lift"
                     >
                       ✏️ 修改
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="danger"
+                      className="flex-1"
                       onClick={handleDeleteGift}
-                      className="flex-1 themed-button-danger py-2 rounded-lg font-bold"
                     >
                       🗑️ 删除
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
                 /* 编辑模式 */
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">姓名</label>
-                    <input
-                      type="text"
-                      value={editFormData.name}
-                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                      className="themed-ring"
-                      autoFocus
-                    />
-                  </div>
+                  <Input
+                    label="姓名"
+                    type="text"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    autoFocus
+                  />
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">金额</label>
-                    <input
+                    <Input
+                      label="金额"
                       type="number"
                       step="0.01"
                       value={editFormData.amount}
                       onChange={(e) => setEditFormData({ ...editFormData, amount: e.target.value })}
-                      className="themed-ring"
                     />
                     {editFormData.amount && !isNaN(parseFloat(editFormData.amount)) && (
                       <div className="text-sm text-gray-600 mt-1 text-right themed-text">
@@ -899,31 +879,31 @@ export default function MainPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">备注</label>
-                    <textarea
-                      value={editFormData.remark}
-                      onChange={(e) => setEditFormData({ ...editFormData, remark: e.target.value })}
-                      placeholder="备注内容（选填）"
-                      className="themed-ring"
-                      rows={2}
-                    />
-                  </div>
+                  <Input
+                    label="备注"
+                    type="text"
+                    value={editFormData.remark}
+                    onChange={(e) => setEditFormData({ ...editFormData, remark: e.target.value })}
+                    placeholder="备注内容（选填）"
+                    className="!mb-0"
+                  />
 
                   {/* 操作按钮 */}
                   <div className="flex gap-3 mt-6 pt-4 border-t">
-                    <button
+                    <Button
+                      variant="secondary"
+                      className="flex-1"
                       onClick={() => setEditFormData({ ...editFormData, isEditing: false })}
-                      className="flex-1 themed-button-secondary py-2 rounded-lg font-bold"
                     >
                       取消
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="primary"
+                      className="flex-1"
                       onClick={handleUpdateGift}
-                      className="flex-1 themed-button-primary py-2 rounded-lg font-bold hover-lift"
                     >
                       💾 保存
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -931,6 +911,6 @@ export default function MainPage() {
           </div>
         )}
       </div>
-    </div>
+    </MainLayout>
   );
 }

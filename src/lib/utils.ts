@@ -1,3 +1,5 @@
+import { GiftType } from '@/types';
+
 export const Utils = {
   // 格式化货币
   formatCurrency: (amount: number): string => {
@@ -44,17 +46,33 @@ export const Utils = {
   },
 
   // 获取当前日期时间
-  getCurrentDateTime: () => {
+  getCurrentDateTime: (): { date: string; time: string } => {
     const now = new Date();
     const pad = (num: number) => num.toString().padStart(2, '0');
     return {
       date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
-      time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+      time: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
     };
   },
 
   // 生成唯一ID
   generateId: (): string => {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  },
+
+  // 验证礼金类型
+  isValidGiftType: (type: string): type is GiftType => {
+    return ['现金', '微信', '支付宝', '其他'].includes(type);
+  },
+
+  // 验证金额
+  isValidAmount: (amount: number): boolean => {
+    return !isNaN(amount) && amount > 0 && amount <= 999999;
+  },
+
+  // 验证姓名长度
+  isValidName: (name: string): boolean => {
+    const trimmedName = name.trim();
+    return trimmedName.length >= 1 && trimmedName.length <= 20;
   },
 };

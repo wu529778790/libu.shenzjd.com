@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CryptoService } from "@/lib/crypto";
 import { Event } from "@/types";
+import PageLayout from "@/components/layout/PageLayout";
+import FormLayout from "@/components/layout/FormLayout";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import { DEFAULT_VALUES } from "@/constants/app";
 
 export default function Setup() {
   const navigate = useNavigate();
@@ -11,9 +16,9 @@ export default function Setup() {
     startTime: "",
     endDate: "",
     endTime: "",
-    password: "",
-    confirmPassword: "",
-    theme: "festive" as "festive" | "solemn",
+    password: DEFAULT_VALUES.PASSWORD as string, // 使用默认密码
+    confirmPassword: DEFAULT_VALUES.PASSWORD as string,
+    theme: DEFAULT_VALUES.THEME as "festive" | "solemn",
     recorder: "",
   });
   const [loading, setLoading] = useState(false);
@@ -86,143 +91,92 @@ export default function Setup() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
-      <div className="w-full max-w-2xl card p-8 fade-in">
-        <h1 className="text-3xl font-bold mb-2 text-center themed-header">
-          创建新事件
-        </h1>
-        <p className="text-gray-600 text-center mb-6">
-          设置活动信息和管理密码
-        </p>
-
+    <PageLayout title="电子礼簿系统" subtitle="创建新事件，设置活动信息和管理密码">
+      <FormLayout title="创建新事件">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                事件名称 *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="如：张三 & 李四 婚礼"
-                className="themed-ring"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                记账人（选填）
-              </label>
-              <input
-                type="text"
-                value={formData.recorder}
-                onChange={(e) =>
-                  setFormData({ ...formData, recorder: e.target.value })
-                }
-                placeholder="记账人姓名"
-                className="themed-ring"
-              />
-            </div>
+            <Input
+              label="事件名称 *"
+              type="text"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              placeholder="如：张三 & 李四 婚礼"
+              required
+            />
+            <Input
+              label="记账人（选填）"
+              type="text"
+              value={formData.recorder}
+              onChange={(e) =>
+                setFormData({ ...formData, recorder: e.target.value })
+              }
+              placeholder="记账人姓名"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                开始日期 *
-              </label>
-              <input
-                type="date"
-                required
-                value={formData.startDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, startDate: e.target.value })
-                }
-                className="themed-ring"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                开始时间
-              </label>
-              <input
-                type="time"
-                value={formData.startTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, startTime: e.target.value })
-                }
-                className="themed-ring"
-              />
-            </div>
+            <Input
+              label="开始日期 *"
+              type="date"
+              value={formData.startDate}
+              onChange={(e) =>
+                setFormData({ ...formData, startDate: e.target.value })
+              }
+              required
+            />
+            <Input
+              label="开始时间"
+              type="time"
+              value={formData.startTime}
+              onChange={(e) =>
+                setFormData({ ...formData, startTime: e.target.value })
+              }
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                结束日期 *
-              </label>
-              <input
-                type="date"
-                required
-                value={formData.endDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, endDate: e.target.value })
-                }
-                className="themed-ring"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                结束时间
-              </label>
-              <input
-                type="time"
-                value={formData.endTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, endTime: e.target.value })
-                }
-                className="themed-ring"
-              />
-            </div>
+            <Input
+              label="结束日期 *"
+              type="date"
+              value={formData.endDate}
+              onChange={(e) =>
+                setFormData({ ...formData, endDate: e.target.value })
+              }
+              required
+            />
+            <Input
+              label="结束时间"
+              type="time"
+              value={formData.endTime}
+              onChange={(e) =>
+                setFormData({ ...formData, endTime: e.target.value })
+              }
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                管理密码 *
-              </label>
-              <input
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                placeholder="建议使用 123456"
-                className="themed-ring"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                确认密码 *
-              </label>
-              <input
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-                placeholder="再次输入密码"
-                className="themed-ring"
-              />
-            </div>
+            <Input
+              label="管理密码 *"
+              type="password"
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              placeholder="建议使用 123456"
+              required
+            />
+            <Input
+              label="确认密码 *"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) =>
+                setFormData({ ...formData, confirmPassword: e.target.value })
+              }
+              placeholder="再次输入密码"
+              required
+            />
           </div>
 
           <div>
@@ -262,25 +216,28 @@ export default function Setup() {
           )}
 
           <div className="flex gap-3 pt-2">
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              className="flex-1 p-3 rounded-lg font-bold"
               disabled={loading}
-              className="flex-1 themed-button-primary p-3 rounded-lg font-bold hover-lift disabled:opacity-50">
+            >
               {loading ? "创建中..." : "✨ 创建事件"}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
+              className="flex-1 p-3 rounded-lg font-bold"
               onClick={() => navigate("/")}
-              className="flex-1 themed-button-secondary p-3 rounded-lg font-bold hover-lift">
+            >
               返回首页
-            </button>
+            </Button>
           </div>
 
           <div className="pt-4 text-xs text-gray-500 text-center">
             💡 提示：默认密码建议使用 123456，创建后可在主页面修改
           </div>
         </form>
-      </div>
-    </div>
+      </FormLayout>
+    </PageLayout>
   );
 }

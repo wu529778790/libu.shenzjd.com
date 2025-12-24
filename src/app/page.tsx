@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CryptoService } from "@/lib/crypto";
+import { useEvents } from "@/hooks/useEvents";
+import PageLayout from "@/components/layout/PageLayout";
+import FormLayout from "@/components/layout/FormLayout";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import { formatDate, formatDateTime } from "@/utils/format";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { events } = useEvents();
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [showSessionChoice, setShowSessionChoice] = useState(false);
-  const [events, setEvents] = useState<any[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [currentSessionEvent, setCurrentSessionEvent] = useState<any>(null);
   const [password, setPassword] = useState("");
@@ -14,13 +20,6 @@ export default function Home() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // 检查是否有事件存在
-    const storedEvents = JSON.parse(
-      localStorage.getItem("giftlist_events") || "[]"
-    );
-
-    setEvents(storedEvents);
-
     // 检查当前会话
     const session = sessionStorage.getItem("currentEvent");
     if (session) {
@@ -31,13 +30,13 @@ export default function Home() {
     }
 
     // 没有会话但有事件 → 显示事件管理界面，并默认选中第一个事件
-    if (storedEvents.length > 0) {
+    if (events.length > 0) {
       setShowPasswordInput(true);
-      setSelectedEvent(storedEvents[0]); // 默认选中第一个事件
+      setSelectedEvent(events[0]); // 默认选中第一个事件
     } else {
       navigate("/setup", { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, events]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,11 +83,8 @@ export default function Home() {
   const handleSwitchFromSession = () => {
     sessionStorage.removeItem("currentEvent");
     setShowSessionChoice(false);
-    const storedEvents = JSON.parse(
-      localStorage.getItem("giftlist_events") || "[]"
-    );
-    if (storedEvents.length > 0) {
-      setSelectedEvent(storedEvents[0]);
+    if (events.length > 0) {
+      setSelectedEvent(events[0]);
       setShowPasswordInput(true);
     }
   };
@@ -108,13 +104,8 @@ export default function Home() {
   // 会话选择界面
   if (showSessionChoice) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="w-full max-w-md card p-8 fade-in">
-          <h1 className="text-3xl font-bold mb-2 text-center themed-header">
-            电子礼簿系统
-          </h1>
-          <p className="text-gray-600 text-center mb-6">检测到当前会话</p>
-
+      <PageLayout title="电子礼簿系统" subtitle="检测到当前会话">
+        <FormLayout>
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
             <div className="font-bold text-blue-900 mb-1 text-sm">
               当前事件：
@@ -124,34 +115,28 @@ export default function Home() {
             </div>
             <div className="text-xs text-blue-600 mt-1">
               {currentSessionEvent &&
-                (() => {
-                  const formatEventTime = (dt: string) => {
-                    const date = new Date(dt);
-                    const pad = (num: number) =>
-                      num.toString().padStart(2, "0");
-                    return `${date.getFullYear()}-${pad(
-                      date.getMonth() + 1
-                    )}-${pad(date.getDate())}`;
-                  };
-                  return `${formatEventTime(
-                    currentSessionEvent.startDateTime
-                  )} ~ ${formatEventTime(currentSessionEvent.endDateTime)}`;
-                })()}
+                `${formatDate(
+                  currentSessionEvent.startDateTime
+                )} ~ ${formatDate(currentSessionEvent.endDateTime)}`}
             </div>
           </div>
 
           <div className="space-y-3">
-            <button
+            <Button 
+              variant="primary" 
+              className="w-full p-3 rounded-lg font-bold" 
               onClick={handleContinueSession}
-              className="w-full themed-button-primary p-3 rounded-lg font-bold hover-lift">
+            >
               继续使用当前事件
-            </button>
+            </Button>
 
-            <button
+            <Button 
+              variant="secondary" 
+              className="w-full p-3 rounded-lg font-bold" 
               onClick={handleSwitchFromSession}
-              className="w-full themed-button-secondary p-3 rounded-lg font-bold hover-lift">
+            >
               切换到其他事件（需重新输入密码）
-            </button>
+            </Button>
 
             {events.length > 1 && (
               <div className="pt-3 border-t themed-border">
@@ -162,12 +147,14 @@ export default function Home() {
                   {events.map(
                     (ev: any) =>
                       ev.id !== currentSessionEvent?.id && (
-                        <button
+                        <Button
                           key={ev.id}
+                          variant="secondary"
+                          className="w-full text-left px-3 py-2 text-sm !bg-gray-100 !text-gray-800 !border-transparent hover:!bg-gray-200"
                           onClick={() => handleSwitchToSpecificEvent(ev)}
-                          className="w-full text-left px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm transition-colors">
+                        >
                           {ev.name}
-                        </button>
+                        </Button>
                       )
                   )}
                 </div>
@@ -175,38 +162,35 @@ export default function Home() {
             )}
 
             <div className="pt-3 border-t themed-border space-y-2">
-              <button
+              <Button
+                variant="secondary"
+                className="w-full p-2 rounded text-sm"
                 onClick={handleCreateNewEvent}
-                className="w-full themed-button-secondary p-2 rounded text-sm hover-lift">
+              >
                 ✨ 创建新事件
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
+                className="w-full p-2 rounded text-sm"
                 onClick={() => {
                   sessionStorage.removeItem("currentEvent");
                   navigate("/", { replace: true });
                 }}
-                className="w-full themed-button-danger p-2 rounded text-sm">
+              >
                 🔄 返回首页重新选择
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </FormLayout>
+      </PageLayout>
     );
   }
 
   // 密码输入界面
   if (showPasswordInput) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="w-full max-w-md card p-8 fade-in">
-          <h1 className="text-3xl font-bold mb-2 text-center themed-header">
-            电子礼簿系统
-          </h1>
-          <p className="text-gray-600 text-center mb-6">
-            {selectedEvent ? "请输入密码继续" : "请选择事件并输入密码"}
-          </p>
-
+      <PageLayout title="电子礼簿系统" subtitle={selectedEvent ? "请输入密码继续" : "请选择事件并输入密码"}>
+        <FormLayout>
           {/* 事件列表（当没有默认选择时） */}
           {!selectedEvent && events.length > 0 && (
             <div className="mb-4">
@@ -215,30 +199,22 @@ export default function Home() {
               </label>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {events.map((ev) => (
-                  <button
+                  <Button
                     key={ev.id}
+                    variant="secondary"
+                    className="w-full text-left px-3 py-2 !bg-gray-100 !text-gray-800 !border-transparent hover:!bg-blue-50 hover:!border-blue-300 !text-left !justify-start"
                     onClick={() => {
                       setSelectedEvent(ev);
                       setError("");
                     }}
-                    className="w-full text-left px-3 py-2 bg-gray-100 hover:bg-blue-50 hover:border-blue-300 border-2 border-transparent rounded transition-all">
+                  >
                     <div className="font-semibold">{ev.name}</div>
                     <div className="text-xs text-gray-600 mt-1">
-                      {(() => {
-                        const formatEventTime = (dt: string) => {
-                          const date = new Date(dt);
-                          const pad = (num: number) =>
-                            num.toString().padStart(2, "0");
-                          return `${date.getFullYear()}-${pad(
-                            date.getMonth() + 1
-                          )}-${pad(date.getDate())}`;
-                        };
-                        return `${formatEventTime(
-                          ev.startDateTime
-                        )} ~ ${formatEventTime(ev.endDateTime)}`;
-                      })()}
+                      {`${formatDate(
+                        ev.startDateTime
+                      )} ~ ${formatDate(ev.endDateTime)}`}
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -251,74 +227,60 @@ export default function Home() {
                 {selectedEvent.name}
               </div>
               <div className="text-gray-600 mt-1">
-                {(() => {
-                  const formatEventTime = (dt: string) => {
-                    const date = new Date(dt);
-                    const pad = (num: number) =>
-                      num.toString().padStart(2, "0");
-                    return `${date.getFullYear()}-${pad(
-                      date.getMonth() + 1
-                    )}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(
-                      date.getMinutes()
-                    )}`;
-                  };
-                  return `${formatEventTime(
-                    selectedEvent.startDateTime
-                  )} ~ ${formatEventTime(selectedEvent.endDateTime)}`;
-                })()}
+                {`${formatDateTime(
+                  selectedEvent.startDateTime
+                )} ~ ${formatDateTime(selectedEvent.endDateTime)}`}
               </div>
-              <button
+              <Button
+                variant="secondary"
+                className="mt-2 text-xs !p-1 !h-auto"
                 onClick={() => {
                   setSelectedEvent(null);
                   setError("");
                 }}
-                className="mt-2 text-xs text-blue-600 hover:underline">
+              >
                 ← 重新选择事件
-              </button>
+              </Button>
             </div>
           )}
 
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                管理密码
-              </label>
-              <input
+              <Input
+                label="管理密码"
                 type="password"
-                required
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   setError("");
                 }}
                 placeholder={selectedEvent ? "默认可能是 123456" : "请输入密码"}
-                className={`themed-ring ${error ? "border-red-500" : ""}`}
+                error={error}
                 autoFocus
               />
-              {error && (
-                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm animate-fade-in">
-                  {error}
-                </div>
-              )}
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              className="w-full p-3 rounded-lg font-bold"
               disabled={loading}
-              className="w-full themed-button-primary p-3 rounded-lg font-bold hover-lift disabled:opacity-50">
+            >
               {loading ? "登录中..." : "登录"}
-            </button>
+            </Button>
 
             <div className="pt-4 border-t themed-border space-y-2">
               <div className="flex gap-2">
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  className="flex-1 text-sm p-2 rounded"
                   onClick={() => navigate("/setup")}
-                  className="flex-1 text-sm themed-button-secondary p-2 rounded hover-lift">
+                >
                   ✨ 创建新事件
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="danger"
+                  className="flex-1 text-sm p-2 rounded"
                   onClick={() => {
                     if (
                       confirm(
@@ -329,26 +291,24 @@ export default function Home() {
                       navigate("/", { replace: true });
                     }
                   }}
-                  className="flex-1 text-sm themed-button-danger p-2 rounded">
+                >
                   🗑️ 清除事件
-                </button>
+                </Button>
               </div>
             </div>
           </form>
-        </div>
-      </div>
+        </FormLayout>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+    <PageLayout title="电子礼簿系统" subtitle="正在初始化...">
       <div className="text-center fade-in-slow">
-        <h1 className="text-4xl font-bold mb-4 themed-header">电子礼簿系统</h1>
-        <p className="text-gray-600">正在初始化...</p>
         <div className="mt-8 text-sm text-gray-500">
           <p>正在检查存储状态...</p>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
