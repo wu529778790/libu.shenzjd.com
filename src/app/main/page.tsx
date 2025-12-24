@@ -386,7 +386,7 @@ export default function MainPage() {
                               : gift.data!.name}
                           </div>
                         ) : (
-                          <span className="text-gray-300">+</span>
+                          <span className="text-gray-300 print-placeholder">+</span>
                         )}
                       </div>
 
@@ -397,7 +397,7 @@ export default function MainPage() {
                             {Utils.amountToChinese(gift.data!.amount)}
                           </div>
                         ) : (
-                          <span className="text-gray-300">+</span>
+                          <span className="text-gray-300 print-placeholder">+</span>
                         )}
                       </div>
                     </div>

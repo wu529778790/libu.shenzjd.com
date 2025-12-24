@@ -386,6 +386,10 @@ input[type="checkbox"].themed-ring:checked {
   .no-print {
     display: none !important;
   }
+  /* 打印时隐藏占位符 */
+  .print-placeholder {
+    display: none !important;
+  }
 }
 
 /* ==================== 礼簿表格样式 - 方案A：每列独立卡片 ==================== */
