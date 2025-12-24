@@ -303,111 +303,6 @@ export default function MainPage() {
     });
   };
 
-  // 退出
-  const handleLogout = () => {
-    showConfirm(
-      "退出选项",
-      "确定要退出吗？\\n\\n选择【确定】：仅清除当前会话\\n选择【彻底退出】：清除会话并删除所有事件数据",
-      () => {
-        // 普通确定 - 仅清除会话
-        sessionStorage.removeItem("currentEvent");
-        router.replace("/");
-      },
-      () => {
-        // 彻底退出 - 清除所有数据
-        showConfirm(
-          "彻底退出",
-          "确定要删除所有事件和数据吗？此操作不可恢复！",
-          () => {
-            sessionStorage.removeItem("currentEvent");
-            localStorage.removeItem("giftlist_events");
-
-            // 清除所有礼金数据
-            const keys = Object.keys(localStorage);
-            keys.forEach(key => {
-              if (key.startsWith("giftlist_gifts_")) {
-                localStorage.removeItem(key);
-              }
-            });
-
-            router.replace("/");
-          },
-          () => {
-            // 取消彻底退出，回到普通退出
-            sessionStorage.removeItem("currentEvent");
-            router.replace("/");
-          }
-        );
-      }
-    );
-  };
-
-  // 切换到其他事件
-  const handleSwitchEvent = () => {
-    const allEvents = getAllEvents();
-    if (allEvents.length <= 1) {
-      showAlert(
-        "无法切换",
-        "当前只有一个事件，无法切换。如需创建新事件，请先退出后在首页操作。"
-      );
-      return;
-    }
-
-    // 弹出选择对话框
-    const eventNames = allEvents.map((e: any) => e.name).join("\n");
-    showPrompt(
-      "切换事件",
-      `请选择要切换的事件（输入完整名称）:\n\n${eventNames}\n\n当前事件：${event.name}`,
-      "",
-      (selectedName) => {
-        if (!selectedName || selectedName.trim() === "") return;
-
-        const targetEvent = allEvents.find(
-          (e: any) => e.name === selectedName.trim()
-        );
-        if (!targetEvent) {
-          showAlert("错误", "事件名称输入错误，请检查拼写和空格。");
-          return;
-        }
-
-        if (targetEvent.id === event.id) {
-          showAlert("提示", "当前已在该事件中。");
-          return;
-        }
-
-        // 验证密码
-        showPrompt(
-          "密码验证",
-          `请输入 "${targetEvent.name}" 的管理密码：`,
-          "",
-          (pwd) => {
-            if (!pwd) return;
-
-            // 验证密码
-            const hash = CryptoService.hash(pwd);
-            if (hash !== targetEvent.passwordHash) {
-              showAlert("错误", "密码错误！");
-              return;
-            }
-
-            // 更新会话
-            sessionStorage.setItem(
-              "currentEvent",
-              JSON.stringify({
-                event: targetEvent,
-                password: pwd,
-                timestamp: Date.now(),
-              })
-            );
-
-            // 重新加载页面
-            window.location.reload();
-          }
-        );
-      }
-    );
-  };
-
   // 返回首页（清除会话）
   const handleGoHome = () => {
     showConfirm(
@@ -420,31 +315,10 @@ export default function MainPage() {
     );
   };
 
+
   return (
     <div className={`min-h-screen bg-gray-50 ${themeClass}`}>
       <div className="max-w-7xl mx-auto p-4 space-y-4">
-        {/* 🔥 新增：导航控制栏 */}
-        <div className="card themed-bg-light p-3 no-print">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            {/* 当前事件信息 */}
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="font-bold themed-text text-sm">当前：</span>
-              <span className="text-sm truncate" title={event.name}>
-                {event.name}
-              </span>
-            </div>
-
-            {/* 操作按钮组 */}
-            <div className="flex gap-2 flex-wrap flex-shrink-0">
-              <button
-                onClick={handleGoHome}
-                className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 hover-lift">
-                返回首页
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* 头部 */}
         <div className="card themed-bg-light p-4">
           <div className="flex justify-between items-center flex-wrap gap-4">
@@ -470,6 +344,11 @@ export default function MainPage() {
               </p>
             </div>
             <div className="flex gap-2 flex-wrap no-print">
+              <button
+                onClick={handleGoHome}
+                className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 hover-lift">
+                返回首页
+              </button>
               <button
                 onClick={exportPDF}
                 className="themed-button-primary px-4 py-2 rounded-lg hover-lift">
