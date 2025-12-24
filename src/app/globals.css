@@ -316,7 +316,7 @@ input[type="checkbox"].themed-ring:checked {
 /* ==================== 礼簿表格样式 ==================== */
 .gift-book-grid {
   display: grid;
-  grid-template-rows: 3fr 1fr 3fr 2fr;
+  grid-template-rows: 1fr 0.8fr 1.2fr;
   border-top: 2px solid var(--primary-border-color);
   min-height: 0;
   background: rgba(255, 255, 255, 0.3);
@@ -336,13 +336,16 @@ input[type="checkbox"].themed-ring:checked {
   border-bottom: none;
 }
 
-.gift-book-row:nth-child(1),
-.gift-book-row:nth-child(3) {
-  min-height: 33.3%;
+.gift-book-row:nth-child(1) {
+  min-height: 40%;
 }
 
-.gift-book-row:nth-child(4) {
-  min-height: 22%;
+.gift-book-row:nth-child(2) {
+  min-height: 30%;
+}
+
+.gift-book-row:nth-child(3) {
+  min-height: 30%;
 }
 
 .book-cell {
@@ -602,7 +605,7 @@ input[type="checkbox"].themed-ring:checked {
   }
 
   .gift-book-grid {
-    grid-template-rows: 3fr 1fr 3fr 2fr;
+    grid-template-rows: 1fr 0.8fr 1.2fr;
   }
 
   .gift-book-row {

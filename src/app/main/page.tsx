@@ -399,7 +399,7 @@ export default function MainPage() {
                 </div>
               </div>
 
-              {/* 礼簿内容 - 4行垂直布局：姓名、类型、大写金额、小写金额 */}
+              {/* 礼簿内容 - 3行垂直布局：姓名、类型、大写金额 */}
               <div className="gift-book-grid">
                 {/* 第1行：姓名（竖排） */}
                 <div className="gift-book-row">
@@ -445,23 +445,6 @@ export default function MainPage() {
                         {hasData ? (
                           <div className="amount-chinese">
                             {Utils.amountToChinese(gift.data!.amount)}
-                          </div>
-                        ) : <span className="text-gray-300">+</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* 第4行：小写金额（竖排） */}
-                <div className="gift-book-row">
-                  {Array.from({ length: 12 }).map((_, idx) => {
-                    const gift = displayGifts[idx];
-                    const hasData = gift && gift.data && !gift.data.abolished;
-                    return (
-                      <div key={idx} className="amount-number-cell">
-                        {hasData ? (
-                          <div className="amount-number-text">
-                            ¥{gift.data!.amount}
                           </div>
                         ) : <span className="text-gray-300">+</span>}
                       </div>
