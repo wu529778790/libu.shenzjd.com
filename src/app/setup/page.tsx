@@ -16,7 +16,7 @@ export default function SetupPage() {
     startTime: '18:00',
     endDate: Utils.getCurrentDateTime().date,
     endTime: '22:00',
-    password: '',
+    password: '123456',
     theme: 'festive' as 'festive' | 'solemn',
     recorder: '',
     githubSync: false,
@@ -172,7 +172,7 @@ export default function SetupPage() {
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              placeholder="请牢记，丢失无法找回"
+              placeholder="默认 123456，请牢记，丢失无法找回"
               className="themed-ring"
             />
           </div>
