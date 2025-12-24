@@ -4,7 +4,7 @@ import { Utils } from "@/lib/utils";
 interface GiftData {
   name: string;
   amount: number;
-  type: '现金' | '微信' | '支付宝' | '其他';
+  type: "现金" | "微信" | "支付宝" | "其他";
   remark?: string;
   timestamp: string;
   abolished?: boolean;
@@ -18,7 +18,7 @@ interface SyncData {
 
 export default function GuestScreen() {
   const [data, setData] = useState<SyncData | null>(null);
-  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
+  const [setLastUpdateTime] = useState<Date>(new Date());
 
   useEffect(() => {
     // 监听 localStorage 变化
@@ -65,7 +65,8 @@ export default function GuestScreen() {
     );
   }
 
-  const themeClass = data.theme === "theme-festive" ? "theme-festive" : "theme-solemn";
+  const themeClass =
+    data.theme === "theme-festive" ? "theme-festive" : "theme-solemn";
 
   return (
     <div className={`min-h-screen ${themeClass}`}>
@@ -83,9 +84,15 @@ export default function GuestScreen() {
               const isLatest = idx === data.gifts.length - 1 && gift;
 
               return (
-                <div key={idx} className="gift-book-column" data-col-index={idx}>
+                <div
+                  key={idx}
+                  className="gift-book-column"
+                  data-col-index={idx}>
                   {/* 姓名区域 */}
-                  <div className={`book-cell name-cell column-top ${isLatest ? 'bg-yellow-100' : ''}`}>
+                  <div
+                    className={`book-cell name-cell column-top ${
+                      isLatest ? "bg-yellow-100" : ""
+                    }`}>
                     {gift ? (
                       <div className="name">
                         {gift.name.length === 2
@@ -98,7 +105,10 @@ export default function GuestScreen() {
                   </div>
 
                   {/* 金额区域 */}
-                  <div className={`book-cell amount-cell column-bottom ${isLatest ? 'bg-yellow-100' : ''}`}>
+                  <div
+                    className={`book-cell amount-cell column-bottom ${
+                      isLatest ? "bg-yellow-100" : ""
+                    }`}>
                     {gift ? (
                       <div className="amount-chinese">
                         {Utils.amountToChinese(gift.amount)}
@@ -112,28 +122,7 @@ export default function GuestScreen() {
             })}
           </div>
         </div>
-
-        {/* 统计信息 */}
-        <div className="card p-4 mt-4 grid grid-cols-2 gap-4 text-center">
-          <div>
-            <div className="text-sm text-gray-600">最新记录</div>
-            <div className="text-2xl font-bold themed-text">
-              {data.gifts.length > 0 ? data.gifts[data.gifts.length - 1].name : "-"}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-600">最新金额</div>
-            <div className="text-2xl font-bold themed-text">
-              {data.gifts.length > 0 ? `¥${data.gifts[data.gifts.length - 1].amount.toFixed(2)}` : "-"}
-            </div>
-          </div>
-        </div>
-
-        <div className="text-center text-xs text-gray-400 mt-4">
-          自动同步中 | 最后更新: {lastUpdateTime.toLocaleTimeString()}
-        </div>
       </div>
     </div>
   );
 }
-

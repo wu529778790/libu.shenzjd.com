@@ -224,6 +224,59 @@ export const useAppStore = () => {
     }
   };
 
+  // 更新礼物记录
+  const updateGift = async (giftId: string, updatedData: GiftData) => {
+    if (!state.currentEvent || !state.currentPassword) {
+      setState(prev => ({ ...prev, error: '未选择事件或密码' }));
+      return false;
+    }
+
+    try {
+      setState(prev => ({ ...prev, loading: { ...prev.loading, submitting: true } }));
+
+      // 从localStorage加载现有记录
+      const key = `giftlist_gifts_${state.currentEvent.id}`;
+      const existingRecords: GiftRecord[] = JSON.parse(localStorage.getItem(key) || "[]");
+
+      // 查找并更新目标记录
+      const updatedRecords = existingRecords.map(record => {
+        if (record.id === giftId) {
+          // 重新加密更新后的数据
+          const encrypted = CryptoService.encrypt(updatedData, state.currentPassword);
+          return { ...record, encryptedData: encrypted };
+        }
+        return record;
+      });
+
+      // 保存回localStorage
+      localStorage.setItem(key, JSON.stringify(updatedRecords));
+
+      // 更新状态
+      const updatedGifts = state.gifts.map(item => {
+        if (item.record.id === giftId) {
+          return { ...item, data: updatedData };
+        }
+        return item;
+      });
+
+      setState(prev => ({
+        ...prev,
+        gifts: updatedGifts,
+        loading: { ...prev.loading, submitting: false }
+      }));
+
+      return true;
+    } catch (error) {
+      console.error('Failed to update gift:', error);
+      setState(prev => ({
+        ...prev,
+        loading: { ...prev.loading, submitting: false },
+        error: '更新礼金记录失败'
+      }));
+      return false;
+    }
+  };
+
   // 初始化时加载事件
   useEffect(() => {
     loadEvents();
@@ -246,6 +299,7 @@ export const useAppStore = () => {
       addEvent,
       addGift,
       deleteGift,
+      updateGift,
     },
   };
 };

@@ -20,6 +20,14 @@ export default function MainPage() {
     message: '',
     onConfirm: () => {},
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    amount: '',
+    type: '现金' as GiftType,
+    remark: '',
+  });
+  const [chineseAmount, setChineseAmount] = useState('');
 
   // 检查是否有会话，如果没有则返回首页
   useEffect(() => {
@@ -93,6 +101,82 @@ export default function MainPage() {
     }
   };
 
+  // 开始编辑礼物记录
+  const startEditing = () => {
+    if (selectedGift && selectedGift.data) {
+      setIsEditing(true);
+      setEditFormData({
+        name: selectedGift.data.name || '',
+        amount: selectedGift.data.amount.toString() || '',
+        type: selectedGift.data.type || '现金',
+        remark: selectedGift.data.remark || '',
+      });
+      // 设置初始的大写金额
+      const amount = parseFloat(selectedGift.data.amount.toString());
+      if (!isNaN(amount)) {
+        setChineseAmount(Utils.amountToChinese(amount));
+      } else {
+        setChineseAmount('');
+      }
+    }
+  };
+
+  // 取消编辑
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditFormData({
+      name: '',
+      amount: '',
+      type: '现金',
+      remark: '',
+    });
+    setChineseAmount('');
+  };
+
+  // 处理编辑表单中的金额变化
+  const handleEditAmountChange = (value: string) => {
+    setEditFormData({ ...editFormData, amount: value });
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+      setChineseAmount(Utils.amountToChinese(num));
+    } else {
+      setChineseAmount('');
+    }
+  };
+
+  // 保存编辑
+  const saveEdit = async () => {
+    if (!selectedGift || !selectedGift.data) return;
+
+    const amount = parseFloat(editFormData.amount);
+    if (!editFormData.name.trim() || isNaN(amount) || amount <= 0) {
+      alert('请填写正确的姓名和金额');
+      return;
+    }
+
+    const updatedGiftData = {
+      ...selectedGift.data,
+      name: editFormData.name.trim(),
+      amount: amount,
+      type: editFormData.type,
+      remark: editFormData.remark.trim() || undefined,
+    };
+
+    const success = await actions.updateGift(selectedGift.record.id, updatedGiftData);
+    if (success) {
+      // 更新选中的礼物数据
+      setSelectedGift({
+        ...selectedGift,
+        data: updatedGiftData
+      });
+      setIsEditing(false);
+      // 同步数据到副屏
+      syncDataToGuestScreen();
+    } else {
+      alert('更新失败，请重试');
+    }
+  };
+
   // 返回首页（清除会话）
   const handleGoHome = () => {
     setConfirmConfig({
@@ -116,6 +200,14 @@ export default function MainPage() {
   const closeDetailModal = () => {
     setShowDetailModal(false);
     setSelectedGift(null);
+    setIsEditing(false); // 确保退出编辑模式
+    setEditFormData({
+      name: '',
+      amount: '',
+      type: '现金',
+      remark: '',
+    });
+    setChineseAmount('');
   };
 
   // 删除记录
@@ -355,9 +447,17 @@ export default function MainPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 animate-scale-in max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4 border-b pb-2">
-                <h3 className="text-xl font-bold themed-header">礼金详情</h3>
+                <h3 className="text-xl font-bold themed-header">
+                  {isEditing ? '编辑礼金记录' : '礼金详情'}
+                </h3>
                 <button
-                  onClick={closeDetailModal}
+                  onClick={() => {
+                    if (isEditing) {
+                      cancelEditing();
+                    } else {
+                      closeDetailModal();
+                    }
+                  }}
                   className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
                 >
                   ×
@@ -365,57 +465,155 @@ export default function MainPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="font-semibold text-gray-600">姓名：</div>
-                  <div className="font-bold text-lg">{selectedGift.data.name}</div>
+                {isEditing ? (
+                  // 编辑模式表单
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        姓名 *
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.name}
+                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                        className="w-full p-2 border themed-ring rounded"
+                        placeholder="来宾姓名"
+                      />
+                    </div>
 
-                  <div className="font-semibold text-gray-600">金额：</div>
-                  <div className="font-bold text-lg text-red-600">
-                    ¥{selectedGift.data.amount.toFixed(2)}
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        金额 *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.amount}
+                        onChange={(e) => handleEditAmountChange(e.target.value)}
+                        className="w-full p-2 border themed-ring rounded"
+                        placeholder="金额 (元)"
+                      />
+                      {chineseAmount && (
+                        <div className="text-sm text-gray-600 mt-1 text-right themed-text">
+                          {chineseAmount}
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="font-semibold text-gray-600">大写：</div>
-                  <div className="font-bold text-lg font-kaiti">
-                    {Utils.amountToChinese(selectedGift.data.amount)}
-                  </div>
-
-                  <div className="font-semibold text-gray-600">类型：</div>
-                  <div className="font-bold">{selectedGift.data.type}</div>
-
-                  <div className="font-semibold text-gray-600">时间：</div>
-                  <div className="text-gray-700">
-                    {(() => {
-                      const date = new Date(selectedGift.data.timestamp);
-                      const pad = (num: number) => num.toString().padStart(2, "0");
-                      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-                    })()}
-                  </div>
-
-                  {selectedGift.data.remark && (
-                    <>
-                      <div className="font-semibold text-gray-600">备注：</div>
-                      <div className="col-span-2 text-gray-700 bg-gray-50 p-2 rounded">
-                        {selectedGift.data.remark}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        收款类型 *
+                      </label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {(['现金', '微信', '支付宝', '其他'] as GiftType[]).map((type) => (
+                          <label
+                            key={type}
+                            className={`flex items-center justify-center p-2 themed-ring rounded-lg cursor-pointer ${
+                              editFormData.type === type ? 'bg-blue-100 border-blue-500' : ''
+                            }`}
+                            onClick={() => setEditFormData({ ...editFormData, type })}
+                          >
+                            <input
+                              type="radio"
+                              name="editType"
+                              value={type}
+                              checked={editFormData.type === type}
+                              onChange={() => {}}
+                              className="sr-only"
+                            />
+                            <span>{type}</span>
+                          </label>
+                        ))}
                       </div>
-                    </>
-                  )}
-                </div>
+                    </div>
 
-                <div className="flex gap-3 mt-6 pt-4 border-t">
-                  <Button
-                    variant="primary"
-                    className="flex-1"
-                  >
-                    ✏️ 修改
-                  </Button>
-                  <Button
-                    variant="danger"
-                    className="flex-1"
-                    onClick={handleDeleteGift}
-                  >
-                    🗑️ 删除
-                  </Button>
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        备注
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.remark}
+                        onChange={(e) => setEditFormData({ ...editFormData, remark: e.target.value })}
+                        className="w-full p-2 border themed-ring rounded"
+                        placeholder="备注内容（选填）"
+                      />
+                    </div>
+
+                    <div className="flex gap-3 mt-6 pt-4 border-t">
+                      <Button
+                        variant="secondary"
+                        className="flex-1"
+                        onClick={cancelEditing}
+                      >
+                        取消
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="flex-1"
+                        onClick={saveEdit}
+                      >
+                        保存
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // 详情模式
+                  <div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="font-semibold text-gray-600">姓名：</div>
+                      <div className="font-bold text-lg">{selectedGift.data.name}</div>
+
+                      <div className="font-semibold text-gray-600">金额：</div>
+                      <div className="font-bold text-lg text-red-600">
+                        ¥{selectedGift.data.amount.toFixed(2)}
+                      </div>
+
+                      <div className="font-semibold text-gray-600">大写：</div>
+                      <div className="font-bold text-lg font-kaiti">
+                        {Utils.amountToChinese(selectedGift.data.amount)}
+                      </div>
+
+                      <div className="font-semibold text-gray-600">类型：</div>
+                      <div className="font-bold">{selectedGift.data.type}</div>
+
+                      <div className="font-semibold text-gray-600">时间：</div>
+                      <div className="text-gray-700">
+                        {(() => {
+                          const date = new Date(selectedGift.data.timestamp);
+                          const pad = (num: number) => num.toString().padStart(2, "0");
+                          return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                        })()}
+                      </div>
+
+                      {selectedGift.data.remark && (
+                        <>
+                          <div className="font-semibold text-gray-600">备注：</div>
+                          <div className="col-span-2 text-gray-700 bg-gray-50 p-2 rounded">
+                            {selectedGift.data.remark}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 mt-6 pt-4 border-t">
+                      <Button
+                        variant="primary"
+                        className="flex-1"
+                        onClick={startEditing}
+                      >
+                        ✏️ 修改
+                      </Button>
+                      <Button
+                        variant="danger"
+                        className="flex-1"
+                        onClick={handleDeleteGift}
+                      >
+                        🗑️ 删除
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
