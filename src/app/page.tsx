@@ -49,7 +49,8 @@ export default function Home() {
       setShowPasswordInput(true);
       setSelectedEvent(state.events[0]); // 默认选中第一个事件
     } else {
-      navigate('/setup', { replace: true });
+      // 没有事件 → 显示密码输入界面（包含导入按钮）
+      setShowPasswordInput(true);
     }
   }, [state.events, state.loading.events, navigate]);
 
@@ -118,19 +119,30 @@ export default function Home() {
     }
     setImportSuccessMsg(msg);
 
+    // 关闭模态框
+    setShowImportModal(false);
+
     // 重新加载事件列表
     actions.loadEvents();
 
-    // 3秒后自动跳转到事件列表
-    setTimeout(() => {
-      setImportSuccessMsg(null);
-      setShowImportModal(false);
-      // 如果有导入的事件，自动显示密码输入界面
-      if (result.events > 0) {
+    // 如果有导入事件，3秒后显示密码输入界面
+    if (result.events > 0) {
+      setTimeout(() => {
         setShowPasswordInput(true);
-      }
-    }, 3000);
+      }, 3000);
+    }
   };
+
+  // 监听事件列表变化，自动显示密码输入界面
+  useEffect(() => {
+    if (importSuccessMsg && state.events.length > 0) {
+      // 事件列表已加载，自动跳转到密码输入界面
+      setTimeout(() => {
+        setImportSuccessMsg(null);
+        setShowPasswordInput(true);
+      }, 1000);
+    }
+  }, [state.events, importSuccessMsg]);
 
   // 会话选择界面
   if (showSessionChoice) {
@@ -237,38 +249,104 @@ export default function Home() {
 
   // 密码输入界面
   if (showPasswordInput) {
-    return (
-      <>
-        <PageLayout
-          title="电子礼簿系统"
-          subtitle={selectedEvent ? "请输入密码继续" : "请选择事件并输入密码"}
-        >
-          <FormLayout>
-            {/* 备份提醒 */}
-            {BackupService.hasData() && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                <div className="flex items-start gap-2">
-                  <span className="text-yellow-600">⚠️</span>
-                  <div>
-                    <p className="font-semibold text-yellow-800 text-sm">重要提醒</p>
-                    <p className="text-xs text-yellow-700 mt-1">
-                      所有数据存储在浏览器中。请定期导出备份，防止数据丢失！
-                    </p>
-                    <div className="mt-2 flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => navigate('/main')}
-                      >
-                        立即备份
-                      </Button>
+    // 没有事件，显示空状态界面
+    if (state.events.length === 0) {
+      return (
+        <>
+          <PageLayout
+            title="电子礼簿系统"
+            subtitle="还没有事件，请选择操作"
+          >
+            <FormLayout>
+              {/* 导入成功提示 */}
+              {importSuccessMsg && (
+                <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between animate-fade-in">
+                  <div className="flex items-center gap-2 text-green-800 text-sm">
+                    <span>✅</span>
+                    <span>{importSuccessMsg}</span>
+                  </div>
+                  <button
+                    onClick={() => setImportSuccessMsg(null)}
+                    className="text-green-600 hover:text-green-800 font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <div className="text-center text-gray-600 mb-4">
+                  <p className="text-sm">欢迎使用电子礼簿系统</p>
+                  <p className="text-xs mt-1">您可以创建新事件或导入已有备份</p>
+                </div>
+
+                <Button
+                  variant="primary"
+                  className="w-full p-3 rounded-lg font-bold"
+                  onClick={handleCreateNewEvent}
+                >
+                  ✨ 创建新事件
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="w-full p-3 rounded-lg font-bold"
+                  onClick={() => setShowImportModal(true)}
+                >
+                  📂 导入备份
+                </Button>
+
+                <div className="pt-4 border-t themed-border">
+                  <p className="text-xs text-gray-500 text-center">
+                    💡 提示：导入备份可以恢复之前的数据
+                  </p>
+                </div>
+              </div>
+            </FormLayout>
+          </PageLayout>
+
+          {/* 导入模态框 */}
+          <ImportBackupModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onImportSuccess={handleImportSuccess}
+          />
+        </>
+      );
+    }
+
+    // 有事件但没有选中，显示事件选择器
+    if (!selectedEvent && state.events.length > 0) {
+      return (
+        <>
+          <PageLayout
+            title="电子礼簿系统"
+            subtitle="请选择事件并输入密码"
+          >
+            <FormLayout>
+              {/* 备份提醒 */}
+              {BackupService.hasData() && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <div className="flex items-start gap-2">
+                    <span className="text-yellow-600">⚠️</span>
+                    <div>
+                      <p className="font-semibold text-yellow-800 text-sm">重要提醒</p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        所有数据存储在浏览器中。请定期导出备份，防止数据丢失！
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => navigate('/main')}
+                        >
+                          立即备份
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* 事件列表（当没有默认选择时） */}
-            {!selectedEvent && state.events.length > 0 && (
               <EventSelector
                 events={state.events}
                 onSelect={(event) => {
@@ -279,31 +357,83 @@ export default function Home() {
                 title="选择活动"
                 subtitle="请选择要管理的活动"
               />
-            )}
 
-            {/* 选中事件后的信息 */}
-            {selectedEvent && (
-              <div className="mb-4 p-3 themed-ring rounded-lg text-sm">
-                <div className="font-bold text-gray-700">
-                  {selectedEvent.name}
-                </div>
-                <div className="text-gray-600 mt-1">
-                  {`${formatDateTime(
-                    selectedEvent.startDateTime
-                  )} ~ ${formatDateTime(selectedEvent.endDateTime)}`}
+              <div className="pt-4 border-t themed-border space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    className="flex-1 text-sm p-2 rounded"
+                    onClick={handleCreateNewEvent}
+                  >
+                    ✨ 创建新事件
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="flex-1 text-sm p-2 rounded"
+                    onClick={() => setShowImportModal(true)}
+                  >
+                    📂 导入备份
+                  </Button>
                 </div>
                 <Button
-                  variant="secondary"
-                  className="mt-2 text-xs !p-1 !h-auto"
+                  variant="danger"
+                  className="w-full text-sm p-2 rounded"
                   onClick={() => {
-                    setSelectedEvent(null);
-                    setError('');
+                    if (
+                      confirm(
+                        "确定要删除所有事件吗？礼金记录会保留但无法访问。"
+                      )
+                    ) {
+                      localStorage.removeItem('giftlist_events');
+                      window.location.reload();
+                    }
                   }}
                 >
-                  ← 重新选择事件
+                  🗑️ 清除事件
                 </Button>
               </div>
-            )}
+            </FormLayout>
+          </PageLayout>
+
+          {/* 导入模态框 */}
+          <ImportBackupModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onImportSuccess={handleImportSuccess}
+          />
+        </>
+      );
+    }
+
+    // 有选中事件，显示密码输入
+    return (
+      <>
+        <PageLayout
+          title="电子礼簿系统"
+          subtitle="请输入密码继续"
+        >
+          <FormLayout>
+            {/* 选中事件后的信息 */}
+            <div className="mb-4 p-3 themed-ring rounded-lg text-sm">
+              <div className="font-bold text-gray-700">
+                {selectedEvent.name}
+              </div>
+              <div className="text-gray-600 mt-1">
+                {`${formatDateTime(
+                  selectedEvent.startDateTime
+                )} ~ ${formatDateTime(selectedEvent.endDateTime)}`}
+              </div>
+              <Button
+                variant="secondary"
+                className="mt-2 text-xs !p-1 !h-auto"
+                onClick={() => {
+                  setSelectedEvent(null);
+                  setError('');
+                }}
+              >
+                ← 重新选择事件
+              </Button>
+            </div>
 
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div>
@@ -315,7 +445,7 @@ export default function Home() {
                     setPassword(e.target.value);
                     setError('');
                   }}
-                  placeholder={selectedEvent ? "默认可能是 123456" : "请输入密码"}
+                  placeholder="默认可能是 123456"
                   error={error}
                   autoFocus
                 />
@@ -357,7 +487,6 @@ export default function Home() {
                       )
                     ) {
                       localStorage.removeItem('giftlist_events');
-                      // 重新加载页面以更新事件列表
                       window.location.reload();
                     }
                   }}
@@ -366,22 +495,6 @@ export default function Home() {
                 </Button>
               </div>
             </form>
-
-            {/* 导入成功提示 */}
-            {importSuccessMsg && (
-              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between animate-fade-in">
-                <div className="flex items-center gap-2 text-green-800 text-sm">
-                  <span>✅</span>
-                  <span>{importSuccessMsg}</span>
-                </div>
-                <button
-                  onClick={() => setImportSuccessMsg(null)}
-                  className="text-green-600 hover:text-green-800 font-bold"
-                >
-                  ×
-                </button>
-              </div>
-            )}
           </FormLayout>
         </PageLayout>
 
@@ -402,15 +515,6 @@ export default function Home() {
         <div className="text-center fade-in-slow">
           <div className="mt-8 text-sm text-gray-500">
             <p>正在检查存储状态...</p>
-          </div>
-          <div className="mt-6">
-            <Button
-              variant="secondary"
-              className="text-sm p-2 rounded"
-              onClick={() => setShowImportModal(true)}
-            >
-              📂 导入备份（如果没有事件）
-            </Button>
           </div>
         </div>
       </PageLayout>
