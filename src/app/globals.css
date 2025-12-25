@@ -939,7 +939,7 @@ input[type="checkbox"].themed-ring:checked {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--primary-bg-light);
+  background: linear-gradient(135deg, var(--primary-bg-light) 0%, #ffffff 100%);
 }
 
 /* 空状态 */
@@ -1008,12 +1008,14 @@ input[type="checkbox"].themed-ring:checked {
   flex-wrap: nowrap;
   overflow-x: auto;
   overflow-y: hidden;
-  gap: 2px;
-  padding: 8px;
+  gap: 8px;
+  padding: 16px 8px 16px 16px;
   align-items: stretch;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: var(--primary-color) var(--primary-bg-light);
+  background: linear-gradient(to right, var(--primary-bg-light) 0%, transparent 8px, transparent calc(100% - 8px), var(--primary-bg-light) 100%);
+  background-attachment: local, local, scroll, scroll;
 }
 
 /* 滚动条样式 */
@@ -1038,18 +1040,33 @@ input[type="checkbox"].themed-ring:checked {
   max-width: 35mm;
   flex: 0 0 auto;
   background: white;
-  border: 2px solid var(--primary-border-color);
-  border-radius: 6px;
+  border: 3px solid var(--primary-border-color);
+  border-radius: 8px;
   overflow: hidden;
   height: calc(100vh - 160px);
   min-height: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 /* 最新记录高亮 */
 .guest-screen-column.latest {
-  border: 3px solid var(--primary-color);
-  box-shadow: 0 0 20px var(--shadow-color);
+  border: 4px solid var(--primary-color);
+  box-shadow: 0 0 25px var(--shadow-color), 0 4px 16px rgba(0, 0, 0, 0.15);
   animation: pulse 2s infinite;
+  z-index: 10;
+}
+
+/* 脉冲动画 - 增强可见性 */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 25px var(--shadow-color), 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--shadow-color), 0 6px 20px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+  }
 }
 
 /* 姓名区域 */
