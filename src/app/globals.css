@@ -974,22 +974,21 @@ input[type="checkbox"].themed-ring:checked {
   flex-shrink: 0;
   position: relative;
   z-index: 10;
-  height: 70px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: none;
 }
 
 .guest-screen-title {
-  font-size: 2.4rem;
+  font-size: 2.8rem;
   font-weight: 900;
   text-align: center;
-  color: var(--header-text-color);
+  color: var(--primary-color);
   margin: 0;
-  letter-spacing: 6px;
+  letter-spacing: 8px;
   font-family: "KaiTi", "楷体", serif;
-  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 翻页动画容器 - 包裹礼簿网格 */
@@ -998,9 +997,9 @@ input[type="checkbox"].themed-ring:checked {
   perspective: 3000px;
   overflow: visible;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 20px 40px;
 }
 
 /* 翻页动画 - 从左向右翻 */
@@ -1032,15 +1031,15 @@ input[type="checkbox"].themed-ring:checked {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 2px;
-  border-top: 2px solid var(--primary-border-color);
+  border: 3px solid var(--primary-color);
   background: var(--primary-border-color);
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: visible;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
-  padding: 4px;
+  box-shadow: 0 10px 30px var(--shadow-color);
+  padding: 6px;
   width: 100%;
-  height: 100%;
-  min-height: 0;
+  max-width: 100%;
+  max-height: calc(100vh - 160px);
 }
 
 /* 礼金列 - 完全复制主页面的 gift-book-column */
@@ -1061,10 +1060,7 @@ input[type="checkbox"].themed-ring:checked {
 
 /* 最新记录高亮 - 参考主页面 hover 效果 */
 .gift-book-column.latest {
-  background: var(--link-hover-bg);
   z-index: 10;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  border-color: var(--primary-color);
 }
 
 /* 列内部的分隔线 - 完全复制主页面 */
