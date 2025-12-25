@@ -955,7 +955,6 @@ input[type="checkbox"].themed-ring:checked {
   font-size: 1rem;
 }
 
-
 /* ==================== 副屏样式 - 完全参考主页面 ==================== */
 
 /* 副屏容器 - 全屏布局 */
@@ -999,7 +998,9 @@ input[type="checkbox"].themed-ring:checked {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px 40px;
+  padding: 16px 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 翻页动画 - 从左向右翻 */
@@ -1031,7 +1032,6 @@ input[type="checkbox"].themed-ring:checked {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 2px;
-  border: 3px solid var(--primary-color);
   background: var(--primary-border-color);
   border-radius: 12px;
   overflow: visible;
@@ -1040,6 +1040,7 @@ input[type="checkbox"].themed-ring:checked {
   width: 100%;
   max-width: 100%;
   max-height: calc(100vh - 160px);
+  box-sizing: border-box;
 }
 
 /* 礼金列 - 完全复制主页面的 gift-book-column */
@@ -1056,6 +1057,7 @@ input[type="checkbox"].themed-ring:checked {
   position: relative;
   z-index: 1;
   border: 1px solid var(--primary-border-color);
+  min-width: 0; /* 防止列过宽 */
 }
 
 /* 最新记录高亮 - 参考主页面 hover 效果 */
@@ -1078,7 +1080,7 @@ input[type="checkbox"].themed-ring:checked {
   font-size: clamp(16px, 1.6vw, 25px);
   letter-spacing: 7px;
   font-family: "KaiTi", "楷体", serif;
-  padding: 10px 0;
+  padding: 8px 0;
   overflow: hidden;
   text-align: center;
   min-width: 0;
@@ -1087,30 +1089,35 @@ input[type="checkbox"].themed-ring:checked {
   border: none !important;
   border-radius: 0;
   background: transparent;
+  box-sizing: border-box;
 }
 
 /* 姓名单元格特定样式 - 完全复制主页面 */
 .name-cell .name {
   color: var(--primary-text-color, #333);
-  padding: 15px 0;
+  padding: 12px 0;
   cursor: pointer;
-  font-size: 1.8rem;
-  letter-spacing: 8px;
+  font-size: clamp(16px, 1.6vw, 25px);
+  letter-spacing: 7px;
   min-height: 6em;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: "KaiTi", "楷体", serif;
+  transition: all 0.3s ease;
 }
 
 /* 金额单元格特定样式 - 完全复制主页面 */
 .amount-cell .amount-chinese {
   color: var(--primary-text-color, #333);
-  padding: 12px 0;
-  font-size: 1.6rem;
-  letter-spacing: 6px;
+  padding: 10px 0;
+  font-size: clamp(16px, 1.6vw, 25px);
+  letter-spacing: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: "KaiTi", "楷体", serif;
+  transition: all 0.3s ease;
 }
 
 .page-number,
@@ -1141,7 +1148,13 @@ input[type="checkbox"].themed-ring:checked {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: var(--primary-color) var(--primary-bg-light);
-  background: linear-gradient(to right, var(--primary-bg-light) 0%, transparent 8px, transparent calc(100% - 8px), var(--primary-bg-light) 100%);
+  background: linear-gradient(
+    to right,
+    var(--primary-bg-light) 0%,
+    transparent 8px,
+    transparent calc(100% - 8px),
+    var(--primary-bg-light) 100%
+  );
   background-attachment: local, local, scroll, scroll;
 }
 
@@ -1186,7 +1199,8 @@ input[type="checkbox"].themed-ring:checked {
 
 /* 脉冲动画 - 增强可见性 */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 25px var(--shadow-color), 0 4px 16px rgba(0, 0, 0, 0.15);
     transform: scale(1);
   }
@@ -1231,8 +1245,32 @@ input[type="checkbox"].themed-ring:checked {
   color: var(--primary-text-color);
 }
 
-/* 响应式调整 */
+/* 响应式调整 - 副屏与主屏保持一致 */
 @media (max-width: 1024px) {
+  /* 副屏网格布局响应式 */
+  .guest-screen-wrapper .gift-book-columns {
+    gap: 1.5px;
+    padding: 4px;
+  }
+
+  .guest-screen-wrapper .book-cell {
+    font-size: clamp(12px, 1.4vw, 18px);
+    letter-spacing: 5px;
+    padding: 6px 0;
+  }
+
+  .guest-screen-wrapper .name-cell .name {
+    font-size: clamp(12px, 1.4vw, 18px);
+    min-height: 7em;
+    padding: 8px 0;
+  }
+
+  .guest-screen-wrapper .amount-cell .amount-chinese {
+    font-size: clamp(12px, 1.4vw, 18px);
+    padding: 6px 0;
+  }
+
+  /* 旧样式保留兼容 */
   .guest-screen-column {
     min-width: 25mm;
     height: calc(100vh - 180px);
@@ -1260,11 +1298,33 @@ input[type="checkbox"].themed-ring:checked {
     font-size: 1.2rem;
   }
 
-  .guest-screen-info {
-    font-size: 0.75rem;
-    gap: 8px;
+  /* 副屏网格布局响应式 - 8列 */
+  .guest-screen-wrapper .gift-book-columns {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 1px;
+    padding: 2px;
   }
 
+  .guest-screen-wrapper .book-cell {
+    font-size: 13px;
+    letter-spacing: 4px;
+    padding: 5px 0;
+  }
+
+  .guest-screen-wrapper .name-cell .name {
+    font-size: 16px;
+    min-height: 6em;
+    padding: 8px 0;
+    letter-spacing: 4px;
+  }
+
+  .guest-screen-wrapper .amount-cell .amount-chinese {
+    font-size: 16px;
+    padding: 6px 0;
+    letter-spacing: 4px;
+  }
+
+  /* 旧样式保留兼容 */
   .guest-screen-column {
     min-width: 20mm;
     height: calc(100vh - 200px);
@@ -1277,6 +1337,62 @@ input[type="checkbox"].themed-ring:checked {
 
   .guest-screen-amount {
     font-size: 12pt;
+    letter-spacing: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* 副屏网格布局响应式 - 6列 */
+  .guest-screen-wrapper .gift-book-columns {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1px;
+    padding: 2px;
+  }
+
+  .guest-screen-wrapper .book-cell {
+    font-size: 11px;
+    letter-spacing: 3px;
+    padding: 4px 0;
+  }
+
+  .guest-screen-wrapper .name-cell .name {
+    font-size: 14px;
+    min-height: 5em;
+    padding: 6px 0;
+    letter-spacing: 3px;
+  }
+
+  .guest-screen-wrapper .amount-cell .amount-chinese {
+    font-size: 14px;
+    padding: 4px 0;
+    letter-spacing: 3px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 副屏网格布局响应式 - 4列 */
+  .guest-screen-wrapper .gift-book-columns {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    padding: 1px;
+  }
+
+  .guest-screen-wrapper .book-cell {
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 3px 0;
+  }
+
+  .guest-screen-wrapper .name-cell .name {
+    font-size: 12px;
+    min-height: 4em;
+    padding: 5px 0;
+    letter-spacing: 2px;
+  }
+
+  .guest-screen-wrapper .amount-cell .amount-chinese {
+    font-size: 12px;
+    padding: 3px 0;
     letter-spacing: 2px;
   }
 }
