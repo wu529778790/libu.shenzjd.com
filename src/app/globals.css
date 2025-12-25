@@ -1020,6 +1020,7 @@ input[type="checkbox"].themed-ring:checked {
   box-sizing: border-box;
   justify-content: center;
   align-content: center;
+  grid-auto-rows: 1fr; /* 确保行高度自适应 */
 }
 
 /* 翻页动画 - 从左向右翻 */
@@ -1062,6 +1063,8 @@ input[type="checkbox"].themed-ring:checked {
   z-index: 1;
   border: 1px solid var(--primary-border-color);
   min-width: 0; /* 防止列过宽 */
+  height: 100%; /* 确保列高度撑满容器 */
+  min-height: 0; /* 允许网格项收缩 */
 }
 
 /* 最新记录高亮 - 参考主页面 hover 效果 */
@@ -1095,6 +1098,8 @@ input[type="checkbox"].themed-ring:checked {
   border-radius: 0;
   background: transparent;
   box-sizing: border-box;
+  height: 100%; /* 确保单元格撑满列高度 */
+  width: 100%;
 }
 
 /* 姓名单元格特定样式 - 完全复制主页面 */
@@ -1108,6 +1113,10 @@ input[type="checkbox"].themed-ring:checked {
   font-size: 25px;
   font-family: "KaiTi", "楷体", serif;
   transition: all 0.3s ease;
+  height: 100%; /* 确保撑满单元格高度 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 金额单元格特定样式 - 完全复制主页面 */
@@ -1117,6 +1126,10 @@ input[type="checkbox"].themed-ring:checked {
   letter-spacing: 1.5px;
   padding: 15px 0;
   color: var(--primary-text-color, #333);
+  height: 100%; /* 确保撑满单元格高度 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .page-number,
