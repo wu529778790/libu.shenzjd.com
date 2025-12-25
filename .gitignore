@@ -3,36 +3,32 @@
 /.pnp
 .pnp.js
 
+# Build output
 /dist
-# Testing
-/coverage
-
-# Next.js
-/.next/
 /out
 
-# Production
-/build
+# Testing
+/coverage
 
 # Misc
 .DS_Store
 *.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+*.log
 
 # Env files
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
 
 # Vercel
 .vercel
 
 # TypeScript
 *.tsbuildinfo
-next-env.d.ts
+
+# IDE
+.vscode/
+.idea/
+
+# Claude
+/.claude/

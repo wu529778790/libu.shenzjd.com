@@ -45,14 +45,13 @@ jobs:
           # 创建打包目录
           mkdir -p release-package
 
-          # 复制构建产物
+          # 复制构建产物（单文件）
           echo "📦 复制构建文件..."
-          cp -r dist/* release-package/
+          cp dist/index.html release-package/
 
-          # 复制配置文件（只复制必要的）
-          echo "📝 复制配置文件..."
-          cp package.json release-package/ 2>/dev/null || true
-          cp README.md release-package/ 2>/dev/null || true
+          # 复制 README
+          echo "📝 复制说明文件..."
+          cp README.md release-package/
 
           # 生成版本信息
           TAG_NAME="${{ github.ref_name || inputs.tag_name }}"
@@ -64,75 +63,7 @@ jobs:
           构建者: ${{ github.actor }}
           EOF
 
-          # 生成部署说明
-          cat > release-package/README-部署说明.md << 'EOF'
-          # 礼簿系统 - 部署说明
-
-          ## 📦 包含内容
-          - `index.html` - 入口 HTML 文件
-          - `assets/` - 静态资源（JS、CSS）
-          - `package.json` - 项目配置
-          - `README-部署说明.md` - 本说明文件
-          - `VERSION.txt` - 版本信息
-
-          ## 🚀 使用方法
-
-          ### 方法1: 直接打开（推荐 - 无需服务器！）
-          ```bash
-          # 1. 解压
-          tar -xzf release-package.tar.gz
-          cd release-package
-
-          # 2. 直接用浏览器打开 index.html
-          # 双击 index.html 或在浏览器中按 Ctrl+O 选择文件
-          # 支持 file:// 协议，无需启动服务器
-          ```
-
-          ### 方法2: 本地服务器运行
-          ```bash
-          # 使用任意静态服务器
-          cd release-package
-          npx serve .
-          # 浏览器访问: http://localhost:3000
-          ```
-
-          ### 方法3: 部署到 GitHub Pages
-          1. 进入仓库设置 -> Pages
-          2. 选择 `gh-pages` 分支或 `dist` 目录
-          3. 保存并等待部署完成
-
-          ### 方法4: 部署到自定义服务器
-          ```bash
-          # 将 dist 目录上传到服务器
-          scp -r dist/* user@your-server:/var/www/html/
-          ```
-
-          ## 🔧 首次使用配置
-
-          1. 访问 `/test-data` 生成测试数据
-          2. 或访问 `/setup` 创建新事件
-          3. 默认密码: `123456`
-
-          ## 📝 常用命令
-
-          ```bash
-          pnpm dev        # 开发服务器
-          pnpm build      # 构建
-          pnpm preview    # 预览构建
-          ```
-
-          ## 🔒 安全提示
-
-          - 首次使用请修改默认密码
-          - 定期备份 localStorage 数据
-          - 生产环境建议配置 GitHub 同步
-
-          ## 🆘 问题反馈
-
-          如遇问题，请查看控制台错误信息或提交 Issue
-          EOF
-
-          # 压缩打包（使用最优压缩率）
+          # 压缩打包
           echo "🗜️ 压缩打包中..."
           tar -czf release-package.tar.gz -C release-package .
 
@@ -140,7 +71,7 @@ jobs:
           echo "✅ 打包完成: release-package.tar.gz"
           ls -lh release-package.tar.gz
           echo "📦 包含内容:"
-          tar -tzf release-package.tar.gz | head -20
+          tar -tzf release-package.tar.gz
 
       - name: Get or Create Tag
         id: get_tag
@@ -164,56 +95,54 @@ jobs:
           body: |
             ## 🎉 礼簿系统 ${{ steps.get_tag.outputs.tag_name }}
 
-            ### 📦 包含内容
-            - ✅ 完整的构建产物 (dist/)
-            - ✅ 源代码和配置文件
-            - ✅ 详细的部署说明
+            ### ✨ 核心特性
+            - ✅ **单文件应用**：所有代码内联到单个 HTML 文件（298KB）
+            - ✅ **无需服务器**：支持 file:// 协议，双击即可使用
+            - ✅ **数据加密**：AES-256 加密 + SHA-256 密码哈希
+            - ✅ **双屏联动**：实时同步副屏展示
 
-            ### 🚀 快速开始
-            1. 下载 `release-package.tar.gz`
-            2. 解压到目标目录
-            3. 按照 `README-部署说明.md` 操作
+            ### 📦 包含内容
+            - `index.html` - 单文件应用（可直接打开）
+            - `README.md` - 使用说明
+            - `VERSION.txt` - 版本信息
+
+            ### 🚀 快速开始（无需服务器！）
+
+            **方式1: 直接打开（推荐）**
+            ```bash
+            tar -xzf release-package.tar.gz
+            cd release-package
+            # 双击 index.html 或 Ctrl+O 在浏览器打开
+            ```
+
+            **方式2: 本地服务器**
+            ```bash
+            cd release-package
+            npx serve .
+            # 访问: http://localhost:3000
+            ```
+
+            **方式3: 部署到服务器**
+            ```bash
+            # 上传 index.html 到 Web 服务器
+            # 或部署到 GitHub Pages
+            ```
 
             ### 📝 构建信息
             - **Commit**: ${{ github.sha }}
             - **构建者**: ${{ github.actor }}
             - **分支**: ${{ github.ref_name }}
 
-            ### 🔧 使用方式
+            ### 🎯 页面路由
+            - 首页: `index.html#/`
+            - 创建事件: `index.html#/setup`
+            - 主界面: `index.html#/main`
+            - 副屏: `index.html#/guest-screen`
 
-            **直接打开（无需服务器！）**
-            ```bash
-            tar -xzf release-package.tar.gz
-            cd release-package
-            # 双击 index.html 或在浏览器打开
-            # 支持 file:// 协议
-            ```
-
-            **本地服务器运行**
-            ```bash
-            cd release-package
-            npx serve .
-            # http://localhost:3000
-            ```
-
-            **部署到服务器**
-            ```bash
-            # 将 dist 目录上传到服务器
-            # 或部署到 GitHub Pages
-            ```
-
-            **访问地址**
-            - 首页: `/`
-            - 测试数据: `/test-data`
-            - 事件设置: `/setup`
-            - 副屏: `/guest-screen`
-
-            ### 📋 默认配置
+            ### 🔒 默认配置
             - 默认密码: `123456`
-            - 支持多事件管理
-            - 支持数据加密存储
-            - 支持副屏展示
-            - ✨ 新增：支持直接 HTML 打开（无需服务器）
+            - 数据存储: localStorage
+            - 加密方式: AES-256
 
           files: release-package.tar.gz
           draft: false
