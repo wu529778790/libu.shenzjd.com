@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CryptoService } from "@/lib/crypto";
 import { Event } from "@/types";
 import PageLayout from "@/components/layout/PageLayout";
 import FormLayout from "@/components/layout/FormLayout";
@@ -13,7 +12,6 @@ export default function Setup() {
     name: "张三 & 李四 婚礼", // 默认事件名称
     startDate: new Date().toISOString().split('T')[0], // 默认为今天
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 默认为一周后
-    password: "123456", // 默认密码
     theme: "festive" as "festive" | "solemn",
     recorder: "管理员", // 默认记账人
   });
@@ -47,7 +45,7 @@ export default function Setup() {
         name: formData.name,
         startDateTime,
         endDateTime,
-        passwordHash: CryptoService.hash(formData.password),
+        passwordHash: '', // 不再需要密码
         theme: formData.theme,
         recorder: formData.recorder || undefined,
         createdAt: new Date().toISOString(),
@@ -59,31 +57,27 @@ export default function Setup() {
       existingEvents.push(event);
       localStorage.setItem("giftlist_events", JSON.stringify(existingEvents));
 
-      // 自动创建测试数据
+      // 自动创建测试数据（明文存储，无需加密）
       const testGifts = [
         {
           id: "test1",
           eventId: event.id,
-          encryptedData: CryptoService.encrypt(
-            {
-              name: "测试来宾",
-              amount: 888,
-              type: "现金" as const,
-              remark: "新婚快乐",
-              timestamp: new Date().toISOString(),
-            },
-            formData.password
-          ),
+          encryptedData: JSON.stringify({
+            name: "测试来宾",
+            amount: 888,
+            type: "现金" as const,
+            remark: "新婚快乐",
+            timestamp: new Date().toISOString(),
+          }),
         },
       ];
       localStorage.setItem(`giftlist_gifts_${event.id}`, JSON.stringify(testGifts));
 
-      // 保存会话信息
+      // 保存会话信息（无需密码）
       sessionStorage.setItem(
         "currentEvent",
         JSON.stringify({
           event: event,
-          password: formData.password,
           timestamp: new Date().toISOString(),
         })
       );
@@ -99,7 +93,7 @@ export default function Setup() {
   };
 
   return (
-    <PageLayout title="电子礼簿系统" subtitle="创建新事件，设置活动信息和管理密码">
+    <PageLayout title="电子礼簿系统" subtitle="创建新事件，设置活动信息">
       <FormLayout title="创建新事件">
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -144,17 +138,6 @@ export default function Setup() {
               required
             />
           </div>
-
-          <Input
-            label="管理密码 *"
-            type="password"
-            value={formData.password}
-            onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
-            }
-            placeholder="建议使用 123456"
-            required
-          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -211,7 +194,7 @@ export default function Setup() {
           </div>
 
           <div className="pt-4 text-xs text-gray-500 text-center">
-            💡 提示：默认密码建议使用 123456，创建后可在主页面修改
+            💡 提示：所有数据本地存储，可随时导出Excel备份
           </div>
         </form>
       </FormLayout>

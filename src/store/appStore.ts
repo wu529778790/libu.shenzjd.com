@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Event, GiftData, GiftRecord } from '@/types';
-import { CryptoService } from '@/lib/crypto';
 
 // 全局应用状态接口
 interface AppState {
   currentEvent: Event | null;
-  currentPassword: string | null;
   events: Event[];
   gifts: { record: GiftRecord; data: GiftData | null }[];
   loading: {
@@ -19,7 +17,6 @@ interface AppState {
 // 初始状态
 const initialState: AppState = {
   currentEvent: null,
-  currentPassword: null,
   events: [],
   gifts: [],
   loading: {
@@ -37,11 +34,10 @@ export const useAppStore = () => {
     const session = sessionStorage.getItem('currentEvent');
     if (session) {
       try {
-        const { event, password } = JSON.parse(session);
+        const { event } = JSON.parse(session);
         return {
           ...initialState,
           currentEvent: event,
-          currentPassword: password,
         };
       } catch (e) {
         console.error('Failed to parse session:', e);
@@ -59,47 +55,52 @@ export const useAppStore = () => {
       setState(prev => ({ ...prev, events, loading: { ...prev.loading, events: false } }));
     } catch (error) {
       console.error('Failed to load events:', error);
-      setState(prev => ({ 
-        ...prev, 
-        loading: { ...prev.loading, events: false }, 
-        error: '加载事件失败' 
+      setState(prev => ({
+        ...prev,
+        loading: { ...prev.loading, events: false },
+        error: '加载事件失败'
       }));
     }
   };
 
-  // 从localStorage加载礼物数据
-  const loadGifts = async (eventId: string, password: string) => {
+  // 从localStorage加载礼物数据（无需密码，明文读取）
+  const loadGifts = async (eventId: string) => {
     try {
       setState(prev => ({ ...prev, loading: { ...prev.loading, gifts: true } }));
       const storedGifts = localStorage.getItem(`giftlist_gifts_${eventId}`);
       const records: GiftRecord[] = storedGifts ? JSON.parse(storedGifts) : [];
-      
-      // 解密所有礼物数据
+
+      // 直接解析JSON（数据已经是明文JSON字符串）
       const gifts = records.map(record => {
-        const data = CryptoService.decrypt<GiftData>(record.encryptedData, password);
-        return { record, data };
+        try {
+          const data = JSON.parse(record.encryptedData) as GiftData;
+          return { record, data };
+        } catch (e) {
+          // 如果解析失败，可能是旧数据，尝试作为普通对象
+          console.warn('Failed to parse gift data:', e);
+          return { record, data: null };
+        }
       });
 
-      setState(prev => ({ 
-        ...prev, 
-        gifts, 
-        loading: { ...prev.loading, gifts: false } 
+      setState(prev => ({
+        ...prev,
+        gifts,
+        loading: { ...prev.loading, gifts: false }
       }));
     } catch (error) {
       console.error('Failed to load gifts:', error);
-      setState(prev => ({ 
-        ...prev, 
-        loading: { ...prev.loading, gifts: false }, 
-        error: '加载礼金数据失败' 
+      setState(prev => ({
+        ...prev,
+        loading: { ...prev.loading, gifts: false },
+        error: '加载礼金数据失败'
       }));
     }
   };
 
-  // 保存会话到sessionStorage
-  const saveSession = (event: Event, password: string) => {
+  // 保存会话到sessionStorage（无需密码）
+  const saveSession = (event: Event) => {
     sessionStorage.setItem('currentEvent', JSON.stringify({
       event,
-      password,
       timestamp: Date.now(),
     }));
   };
@@ -123,22 +124,21 @@ export const useAppStore = () => {
     }
   };
 
-  // 添加礼物记录
+  // 添加礼物记录（无需加密，直接存储JSON）
   const addGift = async (giftData: GiftData) => {
-    if (!state.currentEvent || !state.currentPassword) {
-      setState(prev => ({ ...prev, error: '未选择事件或密码' }));
+    if (!state.currentEvent) {
+      setState(prev => ({ ...prev, error: '未选择事件' }));
       return false;
     }
 
     try {
       setState(prev => ({ ...prev, loading: { ...prev.loading, submitting: true } }));
 
-      // 加密礼物数据
-      const encrypted = CryptoService.encrypt(giftData, state.currentPassword);
+      // 直接序列化为JSON字符串（无需加密）
       const record: GiftRecord = {
         id: Date.now().toString(36) + Math.random().toString(36).substr(2),
         eventId: state.currentEvent.id,
-        encryptedData: encrypted,
+        encryptedData: JSON.stringify(giftData),
       };
 
       // 保存到localStorage
@@ -169,8 +169,8 @@ export const useAppStore = () => {
 
   // 删除礼物记录（标记为作废）
   const deleteGift = async (giftId: string) => {
-    if (!state.currentEvent || !state.currentPassword) {
-      setState(prev => ({ ...prev, error: '未选择事件或密码' }));
+    if (!state.currentEvent) {
+      setState(prev => ({ ...prev, error: '未选择事件' }));
       return false;
     }
 
@@ -184,13 +184,12 @@ export const useAppStore = () => {
       // 查找并修改目标记录（标记为作废而非物理删除）
       const updatedRecords = existingRecords.map(record => {
         if (record.id === giftId) {
-          // 解密原数据
-          const decryptedData = CryptoService.decrypt<GiftData>(record.encryptedData, state.currentPassword!);
+          // 解析原数据
+          const decryptedData = JSON.parse(record.encryptedData) as GiftData;
           // 修改数据标记为作废
           const updatedData = { ...decryptedData, abolished: true };
-          // 重新加密
-          const encrypted = CryptoService.encrypt(updatedData, state.currentPassword!);
-          return { ...record, encryptedData: encrypted };
+          // 重新序列化
+          return { ...record, encryptedData: JSON.stringify(updatedData) };
         }
         return record;
       });
@@ -226,8 +225,8 @@ export const useAppStore = () => {
 
   // 更新礼物记录
   const updateGift = async (giftId: string, updatedData: GiftData) => {
-    if (!state.currentEvent || !state.currentPassword) {
-      setState(prev => ({ ...prev, error: '未选择事件或密码' }));
+    if (!state.currentEvent) {
+      setState(prev => ({ ...prev, error: '未选择事件' }));
       return false;
     }
 
@@ -241,9 +240,8 @@ export const useAppStore = () => {
       // 查找并更新目标记录
       const updatedRecords = existingRecords.map(record => {
         if (record.id === giftId) {
-          // 重新加密更新后的数据
-          const encrypted = CryptoService.encrypt(updatedData, state.currentPassword!);
-          return { ...record, encryptedData: encrypted };
+          // 重新序列化更新后的数据
+          return { ...record, encryptedData: JSON.stringify(updatedData) };
         }
         return record;
       });
@@ -284,10 +282,10 @@ export const useAppStore = () => {
 
   // 当前会话变化时加载礼物
   useEffect(() => {
-    if (state.currentEvent && state.currentPassword) {
-      loadGifts(state.currentEvent.id, state.currentPassword);
+    if (state.currentEvent) {
+      loadGifts(state.currentEvent.id);
     }
-  }, [state.currentEvent?.id, state.currentPassword]);
+  }, [state.currentEvent?.id]);
 
   return {
     state,

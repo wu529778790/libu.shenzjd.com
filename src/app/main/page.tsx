@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { GiftType } from "@/types";
+import { GiftType, GiftData } from "@/types";
 import { Utils } from "@/lib/utils";
 import { useAppStore } from "@/store/appStore";
 import MainLayout from "@/components/layout/MainLayout";
 import GiftEntryForm from "@/components/business/GiftEntryForm";
 import Button from "@/components/ui/Button";
 import { formatDateTime } from "@/utils/format";
-import { BackupService, ImportResult } from "@/lib/backup";
-import ImportBackupModal from "@/components/business/ImportBackupModal";
+import { BackupService, ExcelImportResult } from "@/lib/backup";
+import ImportExcelModal from "@/components/business/ImportExcelModal";
 import { speakError, speakText, isVoiceSupported } from "@/lib/voice";
 
 export default function MainPage() {
@@ -36,10 +36,10 @@ export default function MainPage() {
 
   // 检查是否有会话，如果没有则返回首页
   useEffect(() => {
-    if (!state.currentEvent || !state.currentPassword) {
+    if (!state.currentEvent) {
       navigate("/", { replace: true });
     }
-  }, [state.currentEvent, state.currentPassword, navigate]);
+  }, [state.currentEvent, navigate]);
 
   // 当礼物数据变化时，同步到副屏
   useEffect(() => {
@@ -214,7 +214,7 @@ export default function MainPage() {
   const handleGoHome = () => {
     setConfirmConfig({
       title: "返回首页",
-      message: "返回首页将清除当前会话，需要重新选择事件并输入密码。确定吗？",
+      message: "返回首页将清除当前会话，需要重新选择事件。确定吗？",
       onConfirm: () => {
         actions.clearSession();
         navigate("/", { replace: true });
@@ -271,8 +271,8 @@ export default function MainPage() {
     setShowConfirmModal(true);
   };
 
-  // 导出 Excel
-  const exportExcel = () => {
+  // 导出当前事件数据（Excel）
+  const exportData = () => {
     try {
       // 获取所有有效礼金数据（已解密）
       const validGifts = state.gifts
@@ -292,6 +292,57 @@ export default function MainPage() {
       );
     } catch (error) {
       alert("导出Excel失败：" + (error as Error).message);
+    }
+  };
+
+  // 导出所有事件数据（Excel）
+  const exportAllData = async () => {
+    try {
+      // 检查是否有数据
+      if (!BackupService.hasData()) {
+        alert("暂无数据可导出");
+        return;
+      }
+
+      // 获取所有事件
+      const events = state.events;
+      if (events.length === 0) {
+        alert("暂无事件数据");
+        return;
+      }
+
+      // 获取礼金数据的函数（无需密码）
+      const giftDataGetter = (eventId: string): GiftData[] => {
+        try {
+          const stored = localStorage.getItem(`giftlist_gifts_${eventId}`);
+          if (!stored) return [];
+
+          const records = JSON.parse(stored);
+          const gifts: GiftData[] = [];
+
+          for (const record of records) {
+            try {
+              const data = JSON.parse(record.encryptedData) as GiftData;
+              if (data && !data.abolished) {
+                gifts.push(data);
+              }
+            } catch (e) {
+              console.warn(`解析失败: ${record.id}`);
+            }
+          }
+
+          return gifts;
+        } catch (error) {
+          console.error("获取数据失败:", error);
+          return [];
+        }
+      };
+
+      // 调用备份服务导出所有事件
+      await BackupService.exportAllExcel(giftDataGetter);
+
+    } catch (error) {
+      alert("导出失败：" + (error as Error).message);
     }
   };
 
@@ -565,18 +616,6 @@ export default function MainPage() {
     printWindow.document.close();
   };
 
-  // 导出备份
-  const exportBackup = () => {
-    try {
-      BackupService.exportEvent(
-        state.currentEvent!.id,
-        state.currentEvent!.name
-      );
-    } catch (error) {
-      alert("导出失败：" + (error as Error).message);
-    }
-  };
-
   // 打开副屏
   const openGuestScreen = () => {
     // 获取当前页面的完整路径，替换 hash 部分为副屏路径
@@ -590,17 +629,20 @@ export default function MainPage() {
     );
   };
 
-  // 导入备份成功
-  const handleImportSuccess = (result: ImportResult) => {
+  // 导入Excel成功
+  const handleImportSuccess = (result: ExcelImportResult) => {
     // 刷新当前事件的礼物数据
     if (state.currentEvent) {
-      actions.loadGifts(state.currentEvent.id, state.currentPassword!);
+      actions.loadGifts(state.currentEvent.id);
     }
 
     // 显示成功消息
-    let msg = `成功导入 ${result.events} 个事件、${result.gifts} 条礼金记录`;
+    let msg = `成功导入 ${result.gifts} 条礼金记录`;
+    if (result.events > 0) {
+      msg += `、${result.events} 个事件`;
+    }
     if (result.conflicts > 0) {
-      msg += `，跳过 ${result.conflicts} 条重复记录`;
+      msg += `，跳过 ${result.skipped} 条重复`;
     }
     setImportSuccessMsg(msg);
 
@@ -635,19 +677,19 @@ export default function MainPage() {
               <Button variant="primary" onClick={exportPDF}>
                 打印/PDF
               </Button>
-              <Button variant="secondary" onClick={exportExcel}>
-                导出Excel
+              <Button variant="secondary" onClick={exportData}>
+                📊 导出数据
+              </Button>
+              <Button variant="secondary" onClick={exportAllData}>
+                📚 导出全部
               </Button>
               <Button variant="secondary" onClick={openGuestScreen}>
                 开启副屏
               </Button>
-              <Button variant="secondary" onClick={exportBackup}>
-                💾 导出备份
-              </Button>
               <Button
                 variant="secondary"
                 onClick={() => setShowImportModal(true)}>
-                📂 导入备份
+                📥 导入数据
               </Button>
             </div>
           </div>
@@ -1016,11 +1058,13 @@ export default function MainPage() {
           </div>
         )}
 
-        {/* 导入备份模态框 */}
-        <ImportBackupModal
+        {/* 导入Excel模态框 */}
+        <ImportExcelModal
           isOpen={showImportModal}
           onClose={() => setShowImportModal(false)}
           onImportSuccess={handleImportSuccess}
+          currentEvent={state.currentEvent}
+          allEvents={state.events}
         />
       </div>
     </MainLayout>

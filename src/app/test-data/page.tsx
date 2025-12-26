@@ -1,34 +1,30 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { CryptoService } from "@/lib/crypto";
 
 export default function TestData() {
   const navigate = useNavigate();
   const location = useLocation();
   const [eventId, setEventId] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // 检查是否有传递的参数
     const state = location.state as any;
-    if (state?.eventId && state?.password) {
+    if (state?.eventId) {
       setEventId(state.eventId);
-      setPassword(state.password);
     } else {
       // 尝试从 sessionStorage 获取
       const session = sessionStorage.getItem("currentEvent");
       if (session) {
-        const { event, password } = JSON.parse(session);
+        const { event } = JSON.parse(session);
         setEventId(event.id);
-        setPassword(password);
       }
     }
   }, [location]);
 
   const generateTestData = async () => {
-    if (!eventId || !password) {
-      alert("请先创建事件或登录！");
+    if (!eventId) {
+      alert("请先创建事件！");
       navigate("/");
       return;
     }
@@ -63,20 +59,20 @@ export default function TestData() {
           abolished: false,
         };
 
-        const encrypted = CryptoService.encrypt(giftData, password);
+        // 直接存储JSON（无需加密）
         gifts.push({
           id: `test-${i}`,
           eventId,
-          encryptedData: encrypted,
+          encryptedData: JSON.stringify(giftData),
         });
       }
 
       // 保存到 localStorage
       localStorage.setItem(`giftlist_gifts_${eventId}`, JSON.stringify(gifts));
 
-      // 同步到副屏
+      // 同步到副屏（直接解析JSON）
       const decryptedGifts = gifts.map((r) =>
-        CryptoService.decrypt(r.encryptedData, password)
+        JSON.parse(r.encryptedData)
       ).filter(g => g !== null);
 
       const syncData = {
@@ -89,7 +85,7 @@ export default function TestData() {
       alert(`✅ 成功生成 ${gifts.length} 条测试数据！
 
 现在可以：
-1. 返回首页登录
+1. 返回首页选择事件
 2. 在主界面查看和管理数据
 3. 打开副屏（/guest-screen）实时查看
 
@@ -120,7 +116,7 @@ export default function TestData() {
               <li>自动生成 30 条随机礼金记录</li>
               <li>金额范围：100-8000 元</li>
               <li>包含多种支付方式和备注</li>
-              <li>数据已加密存储</li>
+              <li>数据明文存储（无需加密）</li>
               <li>副屏自动显示最新的12条</li>
             </ul>
           </div>
@@ -147,7 +143,7 @@ export default function TestData() {
 
           {!eventId && (
             <div className="text-center text-red-600 text-sm">
-              ⚠️ 请先创建事件或登录！
+              ⚠️ 请先创建事件！
             </div>
           )}
         </div>
