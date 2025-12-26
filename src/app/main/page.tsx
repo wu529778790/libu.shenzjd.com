@@ -287,7 +287,7 @@ export default function MainPage() {
           @page :first { counter-reset: page 1; }
           body { margin: 0; padding: 0; font-family: "KaiTi", "楷体", serif; background: ${colors.bg}; }
           .print-container { width: 100%; height: 100%; padding: 5mm; box-sizing: border-box; }
-          .print-header { margin-bottom: 8mm; padding-bottom: 3mm; border-bottom: 3px solid ${colors.primary}; background: linear-gradient(to right, ${colors.bg}, white); padding: 3mm 2mm; border-radius: 4px; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+          .print-header { margin-bottom: 8mm; padding-bottom: 3mm; border-bottom: 3px solid ${colors.primary}; background: linear-gradient(to right, ${colors.bg}, white); padding: 3mm 2mm; border-radius: 4px; }
           .print-header h1 { font-size: 26pt; margin: 0 0 5mm 0; font-weight: bold; text-align: center; color: ${colors.primary}; letter-spacing: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
           .print-header .info { display: flex; justify-content: space-between; font-size: 10pt; color: ${colors.secondary}; margin-bottom: 3mm; font-weight: 500; }
           .print-header .stats { display: flex; justify-content: center; gap: 8mm; margin-top: 2mm; font-size: 10pt; flex-wrap: wrap; align-items: center; }
@@ -313,9 +313,7 @@ export default function MainPage() {
             content: "第" counter(page) "页";
           }
           @media print {
-            @page { margin: 10mm; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            @page :first { margin: 10mm; counter-reset: page 1; }
           }
         </style>
       </head>
