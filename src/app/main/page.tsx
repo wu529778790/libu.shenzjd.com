@@ -252,7 +252,7 @@ export default function MainPage() {
       return acc;
     }, {} as Record<string, number>);
     const statsHTML = Object.entries(typeStats)
-      .map(([type, amount]) => `<span>${type}: ¥${amount.toFixed(2)}</span>`)
+      .map(([type, amount]) => `<span class="type-stat"><em>${type}</em><b>¥${amount.toFixed(2)}</b></span>`)
       .join("");
 
     const themeColors = {
@@ -289,8 +289,10 @@ export default function MainPage() {
           .print-header { margin-bottom: 8mm; padding-bottom: 3mm; border-bottom: 3px solid ${colors.primary}; background: linear-gradient(to right, ${colors.bg}, white); padding: 3mm 2mm; border-radius: 4px; }
           .print-header h1 { font-size: 26pt; margin: 0 0 5mm 0; font-weight: bold; text-align: center; color: ${colors.primary}; letter-spacing: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
           .print-header .info { display: flex; justify-content: space-between; font-size: 10pt; color: ${colors.text}; margin-bottom: 3mm; font-weight: 500; }
-          .print-header .stats { display: flex; justify-content: center; gap: 15mm; margin-top: 3mm; font-size: 11pt; font-weight: bold; flex-wrap: wrap; }
-          .print-header .stats span { white-space: nowrap; color: ${colors.stats}; background: white; padding: 2mm 3mm; border-radius: 4px; border: 1px solid ${colors.border}; }
+          .print-header .stats { display: flex; justify-content: center; gap: 8mm; margin-top: 2mm; font-size: 10pt; flex-wrap: wrap; align-items: center; }
+          .print-header .stats .type-stat { display: inline-flex; flex-direction: column; align-items: center; white-space: nowrap; color: ${colors.stats}; background: white; padding: 1mm 2mm; border-radius: 3px; border: 1px solid ${colors.border}; min-width: 18mm; }
+          .print-header .stats .type-stat em { font-style: normal; font-size: 8pt; margin-bottom: 0.5mm; opacity: 0.8; }
+          .print-header .stats .type-stat b { font-weight: bold; font-size: 11pt; }
           .print-gift-columns { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5mm; grid-auto-rows: minmax(38mm, auto); margin-bottom: 10mm; }
           .print-gift-column { display: grid; grid-template-rows: 1fr 1.2fr; border: 2px solid ${colors.border}; border-radius: 4px; overflow: hidden; page-break-inside: avoid; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
           .book-cell { display: grid; place-items: center; writing-mode: vertical-lr; text-orientation: mixed; font-weight: bold; padding: 10px 0; overflow: hidden; text-align: center; line-height: 1.2; }
@@ -309,8 +311,8 @@ export default function MainPage() {
               ${state.currentEvent!.recorder ? `<span>记账人: ${state.currentEvent!.recorder}</span>` : ""}
             </div>
             <div class="stats">
-              <span>总金额: ¥${totalAmount.toFixed(2)}</span>
-              <span>总人数: ${validGifts.length}人</span>
+              <span class="type-stat"><em>总金额</em><b>¥${totalAmount.toFixed(2)}</b></span>
+              <span class="type-stat"><em>总人数</em><b>${validGifts.length}人</b></span>
               ${statsHTML}
             </div>
           </div>
