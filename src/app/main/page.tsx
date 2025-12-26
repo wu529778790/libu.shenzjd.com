@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import { formatDateTime } from "@/utils/format";
 import { BackupService, ImportResult } from "@/lib/backup";
 import ImportBackupModal from "@/components/business/ImportBackupModal";
+import { speakError, speakText, isVoiceSupported, stopVoice } from "@/lib/voice";
 
 export default function MainPage() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function MainPage() {
   const [chineseAmount, setChineseAmount] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
   const [importSuccessMsg, setImportSuccessMsg] = useState<string | null>(null);
+  const [voiceStatus, setVoiceStatus] = useState<'ready' | 'speaking' | 'off'>('off');
 
   // 检查是否有会话，如果没有则返回首页
   useEffect(() => {
@@ -44,6 +46,34 @@ export default function MainPage() {
   useEffect(() => {
     syncDataToGuestScreen();
   }, [state.gifts, state.currentEvent?.id]);
+
+  // 监听语音状态
+  useEffect(() => {
+    if (!isVoiceSupported()) {
+      setVoiceStatus('off');
+      return;
+    }
+
+    const synth = window.speechSynthesis;
+
+    // 初始检查
+    if (synth.speaking) {
+      setVoiceStatus('speaking');
+    } else {
+      setVoiceStatus('ready');
+    }
+
+    // 定时检查
+    const checkInterval = setInterval(() => {
+      if (synth.speaking) {
+        setVoiceStatus('speaking');
+      } else {
+        setVoiceStatus('ready');
+      }
+    }, 200);
+
+    return () => clearInterval(checkInterval);
+  }, []);
 
   if (!state.currentEvent) {
     return null; // 或者显示加载状态
@@ -83,6 +113,16 @@ export default function MainPage() {
     if (success) {
       // 同步数据到副屏
       syncDataToGuestScreen();
+
+      // 语音播报（在GiftEntryForm中已处理，这里可选额外提示）
+      if (isVoiceSupported()) {
+        // 可以在这里添加额外的播报逻辑
+      }
+    } else {
+      // 保存失败时播报错误
+      if (isVoiceSupported()) {
+        speakError();
+      }
     }
   };
 
@@ -185,8 +225,17 @@ export default function MainPage() {
       setIsEditing(false);
       // 同步数据到副屏
       syncDataToGuestScreen();
+
+      // 语音播报修改成功
+      if (isVoiceSupported()) {
+        speakText(`修改成功，${editFormData.name.trim()}，${Utils.amountToChinese(amount)}元，${editFormData.type}`);
+      }
     } else {
       alert("更新失败，请重试");
+      // 语音播报错误
+      if (isVoiceSupported()) {
+        speakError();
+      }
     }
   };
 
@@ -235,8 +284,16 @@ export default function MainPage() {
         const success = await actions.deleteGift(selectedGift.record.id);
         if (success) {
           closeDetailModal();
+          // 语音播报删除成功
+          if (isVoiceSupported()) {
+            speakText(`已删除 ${selectedGift.data.name} 的记录`);
+          }
         } else {
           alert("删除失败，请重试");
+          // 语音播报错误
+          if (isVoiceSupported()) {
+            speakError();
+          }
         }
       },
     });
@@ -582,6 +639,29 @@ export default function MainPage() {
     }, 5000);
   };
 
+  // 语音控制处理
+  const handleVoiceControl = () => {
+    if (!isVoiceSupported()) return;
+
+    if (voiceStatus === 'speaking') {
+      stopVoice();
+      setVoiceStatus('ready');
+    } else if (voiceStatus === 'ready') {
+      // 播报当前统计数据
+      const validGifts = state.gifts
+        .filter((g) => g.data && !g.data.abolished)
+        .map((g) => g.data!);
+      const totalAmount = validGifts.reduce((sum, g) => sum + g.amount, 0);
+      const totalGivers = validGifts.length;
+
+      if (totalGivers > 0) {
+        speakText(`当前共${totalGivers}人，总金额${Utils.amountToChinese(totalAmount)}元`);
+      } else {
+        speakText("暂无礼金记录");
+      }
+    }
+  };
+
   return (
     <MainLayout theme={state.currentEvent.theme}>
       <div className="space-y-4">
@@ -620,6 +700,21 @@ export default function MainPage() {
                 onClick={() => setShowImportModal(true)}>
                 📂 导入备份
               </Button>
+              {isVoiceSupported() && (
+                <Button
+                  variant="secondary"
+                  onClick={handleVoiceControl}
+                  className={
+                    voiceStatus === 'speaking'
+                      ? 'bg-green-100 text-green-700 border-green-300 animate-pulse'
+                      : voiceStatus === 'ready'
+                        ? 'bg-blue-50 text-blue-600 border-blue-200'
+                        : ''
+                  }>
+                  {voiceStatus === 'speaking' ? '🔊 停止播报' :
+                   voiceStatus === 'ready' ? '🔊 播报统计' : '🔇 语音关闭'}
+                </Button>
+              )}
             </div>
           </div>
         </div>

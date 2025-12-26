@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { GiftType } from "@/types";
 import { Utils } from "@/lib/utils";
+import { speakGiftData, speakSuccess, isVoiceSupported } from "@/lib/voice";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import VoiceControl from "@/components/ui/VoiceControl";
 
 interface GiftEntryFormProps {
   onSubmit: (giftData: {
@@ -45,12 +47,29 @@ const GiftEntryForm: React.FC<GiftEntryFormProps> = ({
       return;
     }
 
+    // 先执行提交
     onSubmit({
       name: formData.name.trim(),
       amount,
       type: formData.type,
       remark: formData.remark.trim() || undefined,
     });
+
+    // 语音播报（异步执行，不阻塞表单提交）
+    if (isVoiceSupported()) {
+      speakGiftData(
+        formData.name.trim(),
+        amount,
+        formData.type,
+        formData.remark.trim() || undefined
+      ).then(() => {
+        // 播报成功后提示
+        speakSuccess();
+      }).catch(() => {
+        // 播报失败也提示成功，因为数据已保存
+        console.log('语音播报失败，但数据已保存');
+      });
+    }
 
     // 重置表单
     setFormData({
@@ -131,6 +150,33 @@ const GiftEntryForm: React.FC<GiftEntryFormProps> = ({
         disabled={loading}>
         {loading ? "录入中..." : "确认录入"}
       </Button>
+
+      {/* 语音控制区域 */}
+      <div className="pt-3 border-t themed-border flex items-center justify-between">
+        <div className="text-xs text-gray-500">
+          {isVoiceSupported() ? (
+            <span>✅ 语音播报已就绪</span>
+          ) : (
+            <span>⚠️ 您的浏览器不支持语音播报</span>
+          )}
+        </div>
+        {isVoiceSupported() && (
+          <VoiceControl
+            onTest={() => {
+              if (formData.name && formData.amount) {
+                speakGiftData(
+                  formData.name.trim(),
+                  parseFloat(formData.amount),
+                  formData.type,
+                  formData.remark.trim() || undefined
+                );
+              } else {
+                speakGiftData("测试用户", 888, "现金", "测试播报");
+              }
+            }}
+          />
+        )}
+      </div>
     </form>
   );
 };
