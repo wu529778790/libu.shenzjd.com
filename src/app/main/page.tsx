@@ -284,6 +284,7 @@ export default function MainPage() {
         <title>礼金簿打印 - ${state.currentEvent!.name}</title>
         <style>
           @page { size: A4 landscape; margin: 10mm; }
+          @page :first { counter-reset: page 1; }
           body { margin: 0; padding: 0; font-family: "KaiTi", "楷体", serif; background: ${colors.bg}; }
           .print-container { width: 100%; height: 100%; padding: 5mm; box-sizing: border-box; }
           .print-header { margin-bottom: 8mm; padding-bottom: 3mm; border-bottom: 3px solid ${colors.primary}; background: linear-gradient(to right, ${colors.bg}, white); padding: 3mm 2mm; border-radius: 4px; }
@@ -298,8 +299,11 @@ export default function MainPage() {
           .book-cell { display: grid; place-items: center; writing-mode: vertical-lr; text-orientation: mixed; font-weight: bold; padding: 10px 0; overflow: hidden; text-align: center; line-height: 1.2; }
           .name-cell { border-bottom: 2px solid ${colors.border}; font-size: 19pt; color: ${colors.text}; background: ${isFestive ? "linear-gradient(to bottom, #fff, #fff5f5)" : "linear-gradient(to bottom, #fff, #f8f9fa)"}; }
           .amount-cell { font-size: 17pt; color: ${colors.primary}; background: white; }
-          .print-footer { position: fixed; bottom: 5mm; left: 10mm; right: 10mm; text-align: center; font-size: 8pt; color: ${colors.secondary}; border-top: 1px solid ${colors.border}; padding-top: 2mm; background: white; border-radius: 2px; }
-          @media print { .print-footer::after { content: "页码: " counter(page); } }
+          @media print {
+            @page { margin: 10mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page :first { margin: 10mm; }
+          }
         </style>
       </head>
       <body>
@@ -317,7 +321,6 @@ export default function MainPage() {
             </div>
           </div>
           <div class="print-gift-columns">${giftColumnsHTML}</div>
-          <div class="print-footer">打印时间: ${new Date().toLocaleString("zh-CN")} | 共 ${validGifts.length} 条记录</div>
         </div>
         <script>
           setTimeout(() => { window.print(); setTimeout(() => { window.close(); }, 500); }, 100);
