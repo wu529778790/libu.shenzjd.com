@@ -297,7 +297,7 @@ export default function MainPage() {
           .print-gift-columns { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5mm; grid-auto-rows: minmax(38mm, auto); margin-bottom: 10mm; }
           .print-gift-column { display: grid; grid-template-rows: 1fr 1.2fr; border: 2px solid ${colors.border}; border-radius: 4px; overflow: hidden; page-break-inside: avoid; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
           .book-cell { display: grid; place-items: center; writing-mode: vertical-lr; text-orientation: mixed; font-weight: bold; padding: 10px 0; overflow: hidden; text-align: center; line-height: 1.2; }
-          .name-cell { border-bottom: 2px solid ${colors.border}; font-size: 19pt; color: ${colors.secondary}; background: ${isFestive ? "linear-gradient(to bottom, #fff, #fff5f5)" : "linear-gradient(to bottom, #fff, #f8f9fa)"}; }
+          .name-cell { border-bottom: 2px solid ${colors.border}; font-size: 19pt; color: ${colors.primary}; background: white; }
           .amount-cell { font-size: 17pt; color: ${colors.primary}; background: white; }
           .print-page-number {
             position: fixed;
