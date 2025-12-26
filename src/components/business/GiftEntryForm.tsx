@@ -117,8 +117,10 @@ const GiftEntryForm: React.FC<GiftEntryFormProps> = ({
           {(["现金", "微信", "支付宝", "其他"] as GiftType[]).map((type) => (
             <label
               key={type}
-              className={`flex items-center justify-center p-2 themed-ring rounded-lg cursor-pointer ${
-                formData.type === type ? "bg-blue-100 border-blue-500" : ""
+              className={`flex items-center justify-center p-2 rounded-lg cursor-pointer transition-all duration-200 border-2 ${
+                formData.type === type
+                  ? "bg-[var(--select-bg)] border-[var(--select-border)] text-[var(--select-text)] font-semibold shadow-sm"
+                  : "bg-white border-[var(--primary-border-color)] text-[var(--primary-text-color)] hover:border-[var(--select-hover-border)] hover:bg-[var(--select-hover-bg)]"
               }`}>
               <input
                 type="radio"

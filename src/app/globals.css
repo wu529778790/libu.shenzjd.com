@@ -38,6 +38,12 @@
   --card-bg: #ffffff;
   --shadow-color: rgba(217, 83, 79, 0.15);
   --primary-color-rgb: 217, 83, 79; /* For pulse animation */
+  /* 选中状态颜色 */
+  --select-bg: #fff5f5; /* 浅红背景 */
+  --select-border: #d9534f; /* 红色边框 */
+  --select-text: #c9302c; /* 深红文字 */
+  --select-hover-bg: #ffe5e5; /* 悬停浅红 */
+  --select-hover-border: #c9302c; /* 悬停深红边框 */
 }
 
 .theme-solemn {
@@ -57,6 +63,12 @@
   --card-bg: #ffffff;
   --shadow-color: rgba(73, 80, 87, 0.15);
   --primary-color-rgb: 73, 80, 87; /* For pulse animation */
+  /* 选中状态颜色 */
+  --select-bg: #f8f9fa; /* 浅灰背景 */
+  --select-border: #495057; /* 深灰边框 */
+  --select-text: #343a40; /* 更深灰文字 */
+  --select-hover-bg: #e9ecef; /* 悬停浅灰 */
+  --select-hover-border: #343a40; /* 悬停深灰边框 */
 }
 
 /* ==================== 主题组件样式 ==================== */
