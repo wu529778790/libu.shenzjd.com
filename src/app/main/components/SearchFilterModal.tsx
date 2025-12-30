@@ -1,4 +1,5 @@
-import { GiftType } from '@/types';
+import { GiftType, GiftData } from '@/types';
+import { formatDateTime, formatCurrency } from '@/utils/format';
 
 interface SearchFilterModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface SearchFilterModalProps {
   filteredCount: number;
   totalCount: number;
   theme: "festive" | "solemn";
+  filteredGifts: GiftData[];
 }
 
 export default function SearchFilterModal({
@@ -28,6 +30,7 @@ export default function SearchFilterModal({
   filteredCount,
   totalCount,
   theme,
+  filteredGifts,
 }: SearchFilterModalProps) {
   if (!isOpen) return null;
 
@@ -63,103 +66,137 @@ export default function SearchFilterModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* 标题 */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center p-6 border-b">
           <h3 className="text-xl font-bold themed-header">🔍 搜索与筛选</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl leading-none">×</button>
         </div>
 
-        {/* 搜索框 */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">搜索姓名或备注</label>
-          <input
-            type="text"
-            placeholder="输入关键词..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg text-sm themed-ring focus:outline-none focus:ring-2 focus:ring-blue-500"
-            autoFocus
-          />
-        </div>
+        {/* 滚动内容区域 */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* 搜索框 */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">搜索姓名或备注</label>
+            <input
+              type="text"
+              placeholder="输入关键词..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg text-sm themed-ring focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+          </div>
 
-        {/* 类型筛选 */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">支付方式筛选</label>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { value: "all", label: "📋 全部" },
-              { value: "现金", label: "💵 现金" },
-              { value: "微信", label: "💚 微信" },
-              { value: "支付宝", label: "💙 支付宝" },
-              { value: "其他", label: "📦 其他" },
-            ].map((option) => (
+          {/* 类型筛选 */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">支付方式筛选</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: "all", label: "📋 全部" },
+                { value: "现金", label: "💵 现金" },
+                { value: "微信", label: "💚 微信" },
+                { value: "支付宝", label: "💙 支付宝" },
+                { value: "其他", label: "📦 其他" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setFilterType(option.value as any)}
+                  className={`px-3 py-2 rounded-lg text-sm border transition-all ${
+                    filterType === option.value
+                      ? `${color.activeBg} ${color.activeHover} text-white ${color.activeBorder} font-bold`
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 时间排序 */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">时间排序</label>
+            <div className="flex gap-2">
               <button
-                key={option.value}
-                onClick={() => setFilterType(option.value as any)}
-                className={`px-3 py-2 rounded-lg text-sm border transition-all ${
-                  filterType === option.value
+                onClick={() => setSortOrder("desc")}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm border transition-all ${
+                  sortOrder === "desc"
                     ? `${color.activeBg} ${color.activeHover} text-white ${color.activeBorder} font-bold`
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                {option.label}
+                ⏰ 倒序 (最新在前)
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 时间排序 */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">时间排序</label>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSortOrder("desc")}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm border transition-all ${
-                sortOrder === "desc"
-                  ? `${color.activeBg} ${color.activeHover} text-white ${color.activeBorder} font-bold`
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              ⏰ 倒序 (最新在前)
-            </button>
-            <button
-              onClick={() => setSortOrder("asc")}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm border transition-all ${
-                sortOrder === "asc"
-                  ? `${color.activeBg} ${color.activeHover} text-white ${color.activeBorder} font-bold`
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              ⏰ 正序 (最早在前)
-            </button>
-          </div>
-        </div>
-
-        {/* 筛选结果统计 */}
-        {(searchTerm || filterType !== "all") && (
-          <div className={`mb-4 p-3 ${color.infoBg} border ${color.infoBorder} rounded-lg`}>
-            <div className={`text-sm ${color.infoText}`}>
-              <div className="font-bold">📊 筛选结果</div>
-              <div className="mt-1">
-                显示 <strong>{filteredCount}</strong> / {totalCount} 条记录
-              </div>
-              {searchTerm && (
-                <div className="mt-1">
-                  关键词: <strong>\"{searchTerm}\"</strong>
-                </div>
-              )}
-              {filterType !== "all" && (
-                <div className="mt-1">
-                  类型: <strong>{filterType}</strong>
-                </div>
-              )}
+              <button
+                onClick={() => setSortOrder("asc")}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm border transition-all ${
+                  sortOrder === "asc"
+                    ? `${color.activeBg} ${color.activeHover} text-white ${color.activeBorder} font-bold`
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                ⏰ 正序 (最早在前)
+              </button>
             </div>
           </div>
-        )}
 
-        {/* 底部按钮 */}
-        <div className="flex gap-2 mt-6">
+          {/* 筛选结果统计 */}
+          {(searchTerm || filterType !== "all") && (
+            <div className={`mb-4 p-3 ${color.infoBg} border ${color.infoBorder} rounded-lg`}>
+              <div className={`text-sm ${color.infoText}`}>
+                <div className="font-bold">📊 筛选结果</div>
+                <div className="mt-1">
+                  显示 <strong>{filteredCount}</strong> / {totalCount} 条记录
+                </div>
+                {searchTerm && (
+                  <div className="mt-1">
+                    关键词: <strong>\"{searchTerm}\"</strong>
+                  </div>
+                )}
+                {filterType !== "all" && (
+                  <div className="mt-1">
+                    类型: <strong>{filterType}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 筛选结果列表 - 只在有筛选条件时显示 */}
+          {(searchTerm || filterType !== "all") && filteredGifts.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">筛选结果预览</label>
+              <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-2 bg-gray-50">
+                {filteredGifts.map((gift, index) => (
+                  <div key={index} className="flex justify-between items-center p-2 bg-white rounded border text-sm">
+                    <div className="flex-1">
+                      <div className="font-bold">{gift.name}</div>
+                      <div className="text-xs text-gray-500">
+                        {formatDateTime(gift.timestamp)} | {gift.type}
+                        {gift.remark && ` | ${gift.remark}`}
+                      </div>
+                    </div>
+                    <div className="font-bold themed-text">
+                      {formatCurrency(gift.amount)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 无结果提示 */}
+          {(searchTerm || filterType !== "all") && filteredGifts.length === 0 && (
+            <div className="mb-4 p-6 text-center text-gray-500 bg-gray-50 rounded-lg">
+              <div className="text-2xl mb-2">😅</div>
+              <div>没有找到符合条件的记录</div>
+            </div>
+          )}
+        </div>
+
+        {/* 底部按钮 - 固定在底部 */}
+        <div className="flex gap-2 p-6 border-t bg-gray-50">
           <button
             onClick={() => {
               onClear();

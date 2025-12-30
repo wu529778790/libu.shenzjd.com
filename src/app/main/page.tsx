@@ -55,8 +55,43 @@ export default function MainPage() {
     return null;
   }
 
-  // 过滤和排序相关
-  const filteredGifts = state.gifts
+  // 分页相关
+  const ITEMS_PER_PAGE = 12;
+
+  // 主界面显示的数据（不受搜索筛选影响，按时间倒序）
+  const displayGifts = state.gifts
+    .filter((g) => g.data && !g.data.abolished)
+    .sort((a, b) => {
+      if (!a.data || !b.data) return 0;
+      return new Date(b.data.timestamp).getTime() - new Date(a.data.timestamp).getTime();
+    })
+    .slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    );
+
+  // 总页数
+  const totalValidCount = state.gifts.filter((g) => g.data && !g.data.abolished).length;
+  const totalPages = Math.ceil(totalValidCount / ITEMS_PER_PAGE) || 1;
+
+  // 重置页码当数据变化时
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [state.gifts]);
+
+  // 统计相关（所有数据）
+  const allValidGifts = state.gifts
+    .filter((g) => g.data && !g.data.abolished)
+    .map((g) => g.data!);
+  const totalAmount = allValidGifts.reduce((sum, g) => sum + g.amount, 0);
+  const totalGivers = allValidGifts.length;
+  const pageSubtotal = displayGifts
+    .filter((g) => g.data && !g.data.abolished)
+    .reduce((sum, g) => sum + g.data!.amount, 0);
+  const pageGivers = displayGifts.filter((g) => g.data && !g.data.abolished).length;
+
+  // 模态框内使用的筛选数据（不影响主界面）
+  const modalFilteredGifts = state.gifts
     .filter((g) => {
       if (!g.data || g.data.abolished) return false;
 
@@ -73,38 +108,13 @@ export default function MainPage() {
 
       return true;
     })
+    .map((g) => g.data!)
     .sort((a, b) => {
-      if (!a.data || !b.data) return 0;
       // 按时间排序
-      const timeA = new Date(a.data.timestamp).getTime();
-      const timeB = new Date(b.data.timestamp).getTime();
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
       return sortOrder === "desc" ? timeB - timeA : timeA - timeB;
     });
-
-  // 分页相关
-  const ITEMS_PER_PAGE = 12;
-  const totalPages = Math.ceil(filteredGifts.length / ITEMS_PER_PAGE) || 1;
-
-  // 重置页码当筛选条件改变时
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filterType, sortOrder]);
-
-  const displayGifts = filteredGifts.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  // 统计相关（基于过滤后的数据）
-  const validGifts = filteredGifts
-    .filter((g) => g.data && !g.data.abolished)
-    .map((g) => g.data!);
-  const totalAmount = validGifts.reduce((sum, g) => sum + g.amount, 0);
-  const totalGivers = validGifts.length;
-  const pageSubtotal = displayGifts
-    .filter((g) => g.data && !g.data.abolished)
-    .reduce((sum, g) => sum + g.data!.amount, 0);
-  const pageGivers = displayGifts.filter((g) => g.data && !g.data.abolished).length;
 
   // 处理礼金录入
   const handleGiftSubmit = async (giftData: {
@@ -425,8 +435,6 @@ export default function MainPage() {
           onExportExcel={exportData}
           onOpenGuestScreen={openGuestScreen}
           onOpenSearch={() => setShowSearchModal(true)}
-          hasActiveFilter={searchTerm !== "" || filterType !== "all"}
-          filteredCount={filteredGifts.length}
         />
 
         {/* 导入成功提示 */}
@@ -483,11 +491,6 @@ export default function MainPage() {
                   <span>本页: {formatCurrency(pageSubtotal)}</span>
                   <span className="text-gray-400">|</span>
                   <span>人数: {pageGivers}</span>
-                  {searchTerm || filterType !== "all" ? (
-                    <span className="text-xs text-gray-500 ml-2">
-                      (筛选: {totalGivers}人, ¥{totalAmount.toFixed(2)})
-                    </span>
-                  ) : null}
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -567,9 +570,10 @@ export default function MainPage() {
             setFilterType("all");
             setSortOrder("desc");
           }}
-          filteredCount={filteredGifts.length}
-          totalCount={state.gifts.filter((g) => g.data && !g.data.abolished).length}
+          filteredCount={modalFilteredGifts.length}
+          totalCount={allValidGifts.length}
           theme={state.currentEvent.theme}
+          filteredGifts={modalFilteredGifts}
         />
       </div>
     </MainLayout>
