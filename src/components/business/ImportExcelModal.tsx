@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BackupService, ExcelPreview, ExcelImportResult } from '@/lib/backup';
 import { Event } from '@/types';
 import Button from '@/components/ui/Button';
+import { error, warning, success } from '@/components/ui/Toast';
 
 interface ImportExcelModalProps {
   isOpen: boolean;
@@ -38,7 +39,7 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
 
     // 验证文件类型
     if (!selectedFile.name.match(/\.(xlsx|xls)$/i)) {
-      alert('请选择 Excel 文件 (.xlsx 或 .xls)');
+      error('请选择 Excel 文件 (.xlsx 或 .xls)');
       return;
     }
 
@@ -69,8 +70,8 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
       }
 
       setStep('preview');
-    } catch (error) {
-      alert('无法读取文件：' + (error as Error).message);
+    } catch (err) {
+      error('无法读取文件：' + (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -82,7 +83,7 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
 
     // 验证：如果选择创建新事件但Excel没有事件信息，且没有当前事件可导入
     if (createNewEvent && preview.events.length === 0 && !currentEvent && allEvents.length === 0) {
-      alert('❌ 无法导入\n\nExcel文件中没有包含事件信息，且当前没有可用的事件。\n\n请在Excel中添加事件信息表，或先创建一个事件后再导入。');
+      warning('无法导入：Excel文件中没有包含事件信息，且当前没有可用的事件。请在Excel中添加事件信息表，或先创建一个事件后再导入。');
       return;
     }
 
@@ -100,8 +101,8 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
       if (importResult.success) {
         onImportSuccess(importResult);
       }
-    } catch (error) {
-      alert('导入失败：' + (error as Error).message);
+    } catch (err) {
+      error('导入失败：' + (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -120,36 +121,52 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
   };
 
   // 渲染步骤1：选择文件
-  const renderSelectStep = () => (
-    <div className="space-y-4">
-      <div className="text-center p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 transition-colors">
-        <div className="text-4xl mb-2">📊</div>
-        <p className="text-gray-600 mb-4">选择 Excel 文件导入数据</p>
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={handleFileSelect}
-          className="hidden"
-          id="excel-file-input"
-        />
-        <label
-          htmlFor="excel-file-input"
-          className="inline-block px-6 py-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600 transition-colors">
-          {loading ? '读取中...' : '选择 Excel 文件'}
-        </label>
-        <p className="text-xs text-gray-400 mt-4">支持 .xlsx 和 .xls 格式</p>
-      </div>
+  const renderSelectStep = () => {
+    const handleDownloadTemplate = () => {
+      BackupService.exportTemplate();
+      success('Excel模板已下载，请查看浏览器下载文件夹');
+    };
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-        <strong>💡 提示：</strong>
-        <ul className="list-disc list-inside mt-1 space-y-1">
-          <li>Excel 可以包含礼金明细和事件信息</li>
-          <li>支持直接修改数据后重新导入</li>
-          <li>自动识别重复数据并提供处理选项</li>
-        </ul>
+    return (
+      <div className="space-y-4">
+        <div className="text-center p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 transition-colors">
+          <div className="text-4xl mb-2">📊</div>
+          <p className="text-gray-600 mb-4">选择 Excel 文件导入数据</p>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileSelect}
+            className="hidden"
+            id="excel-file-input"
+          />
+          <label
+            htmlFor="excel-file-input"
+            className="inline-block px-6 py-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600 transition-colors">
+            {loading ? '读取中...' : '选择 Excel 文件'}
+          </label>
+          <p className="text-xs text-gray-400 mt-4">支持 .xlsx 和 .xls 格式</p>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={handleDownloadTemplate}
+            className="flex-1">
+            📋 下载导入模板
+          </Button>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+          <strong>💡 提示：</strong>
+          <ul className="list-disc list-inside mt-1 space-y-1">
+            <li>Excel 可以包含礼金明细和事件信息</li>
+            <li>支持直接修改数据后重新导入</li>
+            <li>自动识别重复数据并提供处理选项</li>
+          </ul>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // 渲染步骤2：预览和配置
   const renderPreviewStep = () => {

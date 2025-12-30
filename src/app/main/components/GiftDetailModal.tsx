@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { GiftType } from '@/types';
 import { amountToChinese } from '@/utils/format';
 import Button from '@/components/ui/Button';
+import { error } from '@/components/ui/Toast';
 
 interface GiftData {
   name: string;
@@ -62,7 +63,7 @@ export default function GiftDetailModal({
   const handleSave = async () => {
     const amount = parseFloat(editFormData.amount);
     if (!editFormData.name.trim() || isNaN(amount) || amount <= 0) {
-      alert('请填写正确的姓名和金额');
+      error('请填写正确的姓名和金额');
       return;
     }
 

@@ -171,9 +171,21 @@ export class BackupService {
     };
 
     const json = JSON.stringify(data, null, 2);
-    const safeName = sanitizeFilename(eventName);
-    const filename = `礼簿_${safeName}_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.json`;
-    downloadFile(json, filename, 'application/json');
+    const blob = new Blob([json], { type: 'application/json' });
+
+    // 清理文件名中的特殊字符
+    const safeName = eventName.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const filename = `礼簿_${safeName}_${dateStr}.json`;
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   /**
@@ -765,7 +777,7 @@ export class BackupService {
     // ========== 生成文件并下载 ==========
 
     // 清理文件名中的特殊字符
-    const safeName = sanitizeFilename(eventName);
+    const safeName = eventName.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const filename = `礼簿_${safeName}_${dateStr}.xlsx`;
 
@@ -774,7 +786,14 @@ export class BackupService {
 
     // 创建 Blob 并下载
     const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    downloadFile(blob, filename);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   /**
@@ -922,7 +941,14 @@ export class BackupService {
 
     // 创建 Blob 并下载
     const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    downloadFile(blob, filename);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
 }

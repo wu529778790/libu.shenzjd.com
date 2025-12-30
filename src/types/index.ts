@@ -20,11 +20,11 @@ export interface GiftData {
   abolished?: boolean;
 }
 
-// 礼金记录（加密存储）
+// 礼金记录（JSON 格式存储）
 export interface GiftRecord {
   id: string;
   eventId: string;
-  encryptedData: string;
+  jsonData: string;
 }
 
 // 类型定义常量

@@ -9,6 +9,7 @@ import { BackupService, ExcelImportResult } from "@/lib/backup";
 import ImportExcelModal from "@/components/business/ImportExcelModal";
 import { speakError, speakText, isVoiceSupported } from "@/lib/voice";
 import Button from "@/components/ui/Button";
+import { error, success, warning } from "@/components/ui/Toast";
 
 // 导入拆分的组件
 import MainHeader from "./components/MainHeader";
@@ -31,6 +32,15 @@ export default function MainPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importSuccessMsg, setImportSuccessMsg] = useState<string | null>(null);
 
+  // 搜索和筛选状态
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<"all" | GiftType>("all");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // 备份提醒状态
+  const [showBackupReminder, setShowBackupReminder] = useState(false);
+  const [lastBackupReminder, setLastBackupReminder] = useState<number>(0);
+
   // 检查是否有会话，如果没有则返回首页
   useEffect(() => {
     if (!state.currentEvent) {
@@ -43,20 +53,73 @@ export default function MainPage() {
     syncDataToGuestScreen();
   }, [state.gifts, state.currentEvent?.id]);
 
+  // 备份提醒逻辑：每10条新记录或30分钟后提醒一次
+  useEffect(() => {
+    if (!state.currentEvent || state.gifts.length === 0) return;
+
+    const now = Date.now();
+    const lastReminder = lastBackupReminder || 0;
+    const timeSinceLastReminder = now - lastReminder;
+
+    // 检查是否需要提醒：30分钟 = 30 * 60 * 1000 = 1,800,000ms
+    const shouldTimeReminder = timeSinceLastReminder > 1800000;
+
+    // 检查记录数量：每10条记录提醒一次
+    const validGiftCount = state.gifts.filter(g => g.data && !g.data.abolished).length;
+    const shouldCountReminder = validGiftCount > 0 && validGiftCount % 10 === 0;
+
+    if ((shouldTimeReminder || shouldCountReminder) && !showBackupReminder) {
+      setShowBackupReminder(true);
+      setLastBackupReminder(now);
+    }
+  }, [state.gifts, state.currentEvent]);
+
   if (!state.currentEvent) {
     return null;
   }
 
+  // 过滤和排序相关
+  const filteredGifts = state.gifts
+    .filter((g) => {
+      if (!g.data || g.data.abolished) return false;
+
+      // 类型筛选
+      if (filterType !== "all" && g.data.type !== filterType) return false;
+
+      // 搜索筛选（姓名或备注）
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        const nameMatch = g.data.name.toLowerCase().includes(searchLower);
+        const remarkMatch = g.data.remark?.toLowerCase().includes(searchLower) || false;
+        if (!nameMatch && !remarkMatch) return false;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (!a.data || !b.data) return 0;
+      // 按时间排序
+      const timeA = new Date(a.data.timestamp).getTime();
+      const timeB = new Date(b.data.timestamp).getTime();
+      return sortOrder === "desc" ? timeB - timeA : timeA - timeB;
+    });
+
   // 分页相关
   const ITEMS_PER_PAGE = 12;
-  const totalPages = Math.ceil(state.gifts.length / ITEMS_PER_PAGE) || 1;
-  const displayGifts = state.gifts.slice(
+  const totalPages = Math.ceil(filteredGifts.length / ITEMS_PER_PAGE) || 1;
+
+  // 重置页码当筛选条件改变时
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterType, sortOrder]);
+
+  const displayGifts = filteredGifts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  // 统计相关
-  const validGifts = state.gifts
+  // 统计相关（基于过滤后的数据）
+  const validGifts = filteredGifts
     .filter((g) => g.data && !g.data.abolished)
     .map((g) => g.data!);
   const totalAmount = validGifts.reduce((sum, g) => sum + g.amount, 0);
@@ -109,6 +172,17 @@ export default function MainPage() {
       };
 
       localStorage.setItem("guest_screen_data", JSON.stringify(syncData));
+
+      // 使用 BroadcastChannel 通知副屏（如果浏览器支持）
+      if (typeof BroadcastChannel !== "undefined") {
+        try {
+          const bc = new BroadcastChannel("guest_screen_sync");
+          bc.postMessage({ type: "update" });
+          bc.close();
+        } catch (e) {
+          console.warn("BroadcastChannel not available:", e);
+        }
+      }
     }
   };
 
@@ -159,7 +233,7 @@ export default function MainPage() {
       }
       return true;
     } else {
-      alert("更新失败，请重试");
+      error("更新失败，请重试");
       if (isVoiceSupported()) {
         speakError();
       }
@@ -177,7 +251,7 @@ export default function MainPage() {
       }
       return true;
     } else {
-      alert("删除失败，请重试");
+      error("删除失败，请重试");
       if (isVoiceSupported()) {
         speakError();
       }
@@ -193,7 +267,7 @@ export default function MainPage() {
         .map((g) => g.data!);
 
       if (validGifts.length === 0) {
-        alert("暂无礼金记录可导出");
+        warning("暂无礼金记录可导出");
         return;
       }
 
@@ -202,8 +276,9 @@ export default function MainPage() {
         validGifts,
         state.currentEvent!
       );
-    } catch (error) {
-      alert("导出Excel失败：" + (error as Error).message);
+      success("Excel导出成功");
+    } catch (err) {
+      error("导出Excel失败：" + (err as Error).message);
     }
   };
 
@@ -214,13 +289,13 @@ export default function MainPage() {
       .map((g) => g.data!);
 
     if (validGifts.length === 0) {
-      alert("暂无礼金记录可打印");
+      warning("暂无礼金记录可打印");
       return;
     }
 
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("无法打开打印窗口，请检查浏览器设置");
+      error("无法打开打印窗口，请检查浏览器设置");
       return;
     }
 
@@ -390,6 +465,36 @@ export default function MainPage() {
           </div>
         )}
 
+        {/* 备份提醒 */}
+        {showBackupReminder && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-center justify-between animate-fade-in">
+            <div className="flex items-center gap-2 text-yellow-800 flex-1">
+              <span>💾</span>
+              <span className="text-sm">
+                <strong>数据备份提醒：</strong>您已录入 {state.gifts.filter(g => g.data && !g.data.abolished).length} 条礼金记录，
+                建议及时导出Excel备份，防止数据丢失！
+              </span>
+            </div>
+            <div className="flex gap-2 ml-2">
+              <button
+                onClick={() => {
+                  exportData();
+                  setShowBackupReminder(false);
+                }}
+                className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-xs font-bold"
+              >
+                立即备份
+              </button>
+              <button
+                onClick={() => setShowBackupReminder(false)}
+                className="text-yellow-600 hover:text-yellow-800 font-bold px-1"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左侧：录入表单 + 总统计 */}
           <div className="lg:col-span-1">
@@ -422,12 +527,81 @@ export default function MainPage() {
           {/* 右侧：礼簿展示 + 页码统计 */}
           <div className="lg:col-span-2">
             <div className="gift-book-frame print-area">
+              {/* 搜索和筛选工具栏 - 只在有数据时显示 */}
+              {state.gifts.length > 0 && (
+                <div className="mb-3 p-3 bg-gray-50 rounded-lg border themed-border no-print">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {/* 搜索框 */}
+                    <div className="flex-1 min-w-[200px]">
+                      <input
+                        type="text"
+                        placeholder="搜索姓名或备注..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg text-sm themed-ring"
+                      />
+                    </div>
+
+                    {/* 类型筛选 */}
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value as any)}
+                      className="px-3 py-2 border rounded-lg text-sm themed-ring"
+                    >
+                      <option value="all">全部类型</option>
+                      <option value="现金">现金</option>
+                      <option value="微信">微信</option>
+                      <option value="支付宝">支付宝</option>
+                      <option value="其他">其他</option>
+                    </select>
+
+                    {/* 排序 */}
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as any)}
+                      className="px-3 py-2 border rounded-lg text-sm themed-ring"
+                    >
+                      <option value="desc">时间倒序</option>
+                      <option value="asc">时间正序</option>
+                    </select>
+
+                    {/* 清空按钮 */}
+                    {(searchTerm || filterType !== "all") && (
+                      <button
+                        onClick={() => {
+                          setSearchTerm("");
+                          setFilterType("all");
+                          setSortOrder("desc");
+                        }}
+                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 underline"
+                      >
+                        清空筛选
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 筛选结果统计 */}
+                  {searchTerm || filterType !== "all" ? (
+                    <div className="mt-2 text-xs text-gray-600">
+                      筛选结果: {filteredGifts.length} 条记录
+                      {searchTerm && <span className="ml-2">关键词: "{searchTerm}"</span>}
+                      {filterType !== "all" && <span className="ml-2">类型: {filterType}</span>}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
               {/* 页码导航和本页统计 */}
               <div className="flex justify-between items-center mb-3 pb-3 border-b themed-border no-print text-sm">
                 <div className="flex items-center gap-3 font-bold themed-text">
                   <span>本页: {formatCurrency(pageSubtotal)}</span>
                   <span className="text-gray-400">|</span>
                   <span>人数: {pageGivers}</span>
+                  {searchTerm || filterType !== "all" ? (
+                    <span className="text-xs text-gray-500 ml-2">
+                      (总计: {totalGivers}人, ¥{totalAmount.toFixed(2)})
+                    </span>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-1">
                   <Button

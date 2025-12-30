@@ -1,11 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { amountToChinese } from "@/utils/format";
-
-declare global {
-  interface Window {
-    // Add global window properties if needed
-  }
-}
 
 interface GiftData {
   name: string;
@@ -24,28 +18,70 @@ interface SyncData {
 
 export default function GuestScreen() {
   const [data, setData] = useState<SyncData | null>(null);
+  const lastChecksum = useRef<string>("");
+  const broadcastRef = useRef<BroadcastChannel | null>(null);
+
+  // 检查数据是否发生变化
+  const hasDataChanged = (newData: SyncData): boolean => {
+    const checksum = `${newData.eventName}-${newData.gifts.length}-${newData.gifts[newData.gifts.length - 1]?.timestamp}`;
+    if (checksum !== lastChecksum.current) {
+      lastChecksum.current = checksum;
+      return true;
+    }
+    return false;
+  };
+
+  // 读取并更新数据
+  const updateData = () => {
+    const syncData = localStorage.getItem("guest_screen_data");
+    if (syncData) {
+      try {
+        const parsed = JSON.parse(syncData) as SyncData;
+        if (hasDataChanged(parsed)) {
+          setData(parsed);
+        }
+      } catch (e) {
+        console.error("解析同步数据失败:", e);
+      }
+    }
+  };
 
   // 监听数据同步
   useEffect(() => {
-    const handleStorageChange = () => {
-      const syncData = localStorage.getItem("guest_screen_data");
-      if (syncData) {
-        try {
-          const parsed = JSON.parse(syncData) as SyncData;
-          setData(parsed);
-        } catch (e) {
-          console.error("解析同步数据失败:", e);
-        }
+    updateData();
+
+    // 优化：使用 BroadcastChannel 进行跨标签页通信（如果浏览器支持）
+    if (typeof BroadcastChannel !== "undefined") {
+      broadcastRef.current = new BroadcastChannel("guest_screen_sync");
+      broadcastRef.current.onmessage = () => {
+        updateData();
+      };
+    }
+
+    // 优化：减少轮询频率，从2秒改为3秒
+    // 只有在没有 BroadcastChannel 时才依赖轮询
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (!broadcastRef.current) {
+      interval = setInterval(updateData, 3000);
+    }
+
+    // storage 事件监听（其他标签页修改数据时触发）
+    const handleStorage = () => {
+      updateData();
+      // 通知其他 BroadcastChannel 监听器
+      if (broadcastRef.current) {
+        broadcastRef.current.postMessage({ type: "update" });
       }
     };
 
-    handleStorageChange();
-    const interval = setInterval(handleStorageChange, 2000);
-    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("storage", handleStorage);
 
     return () => {
-      clearInterval(interval);
-      window.removeEventListener("storage", handleStorageChange);
+      if (interval) clearInterval(interval);
+      if (broadcastRef.current) {
+        broadcastRef.current.close();
+      }
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 
@@ -54,6 +90,7 @@ export default function GuestScreen() {
       <div className="guest-screen-empty">
         <h1>副屏展示</h1>
         <p>等待主屏数据同步...</p>
+        <p className="text-xs text-gray-400 mt-2">提示：请在主屏录入数据或刷新页面</p>
       </div>
     );
   }

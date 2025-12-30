@@ -57,12 +57,12 @@ export default function Setup() {
       existingEvents.push(event);
       localStorage.setItem("giftlist_events", JSON.stringify(existingEvents));
 
-      // 自动创建测试数据（明文存储，无需加密）
+      // 自动创建测试数据（明文JSON存储）
       const testGifts = [
         {
           id: "test1",
           eventId: event.id,
-          encryptedData: JSON.stringify({
+          jsonData: JSON.stringify({
             name: "测试来宾",
             amount: 888,
             type: "现金" as const,

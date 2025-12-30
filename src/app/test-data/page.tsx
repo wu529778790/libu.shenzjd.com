@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { error, success } from "@/components/ui/Toast";
 
 export default function TestData() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function TestData() {
 
   const generateTestData = async () => {
     if (!eventId) {
-      alert("请先创建事件！");
+      error("请先创建事件！");
       navigate("/");
       return;
     }
@@ -59,11 +60,11 @@ export default function TestData() {
           abolished: false,
         };
 
-        // 直接存储JSON（无需加密）
+        // 直接存储JSON
         gifts.push({
           id: `test-${i}`,
           eventId,
-          encryptedData: JSON.stringify(giftData),
+          jsonData: JSON.stringify(giftData),
         });
       }
 
@@ -72,7 +73,7 @@ export default function TestData() {
 
       // 同步到副屏（直接解析JSON）
       const decryptedGifts = gifts.map((r) =>
-        JSON.parse(r.encryptedData)
+        JSON.parse(r.jsonData)
       ).filter(g => g !== null);
 
       const syncData = {
@@ -82,18 +83,11 @@ export default function TestData() {
       };
       localStorage.setItem("guest_screen_data", JSON.stringify(syncData));
 
-      alert(`✅ 成功生成 ${gifts.length} 条测试数据！
-
-现在可以：
-1. 返回首页选择事件
-2. 在主界面查看和管理数据
-3. 打开副屏（/guest-screen）实时查看
-
-副屏将显示最新的12条数据`);
+      success(`成功生成 ${gifts.length} 条测试数据！请返回首页查看`);
       navigate("/");
     } catch (err) {
       console.error(err);
-      alert("生成测试数据失败: " + err);
+      error("生成测试数据失败: " + err);
     } finally {
       setLoading(false);
     }

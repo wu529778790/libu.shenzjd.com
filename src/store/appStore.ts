@@ -79,7 +79,7 @@ export const useAppStore = () => {
       // 直接解析JSON（数据已经是明文JSON字符串）
       const gifts = records.map(record => {
         try {
-          const data = JSON.parse(record.encryptedData) as GiftData;
+          const data = JSON.parse(record.jsonData) as GiftData;
           return { record, data };
         } catch (e) {
           console.warn('解析礼金数据失败:', e);
@@ -137,7 +137,7 @@ export const useAppStore = () => {
       const record: GiftRecord = {
         id: generateId(),
         eventId: state.currentEvent.id,
-        encryptedData: JSON.stringify(giftData),
+        jsonData: JSON.stringify(giftData),
       };
 
       // 保存到localStorage
@@ -176,9 +176,9 @@ export const useAppStore = () => {
 
       const updatedRecords = existingRecords.map(record => {
         if (record.id === giftId) {
-          const data = JSON.parse(record.encryptedData) as GiftData;
+          const data = JSON.parse(record.jsonData) as GiftData;
           const updatedData = { ...data, abolished: true };
-          return { ...record, encryptedData: JSON.stringify(updatedData) };
+          return { ...record, jsonData: JSON.stringify(updatedData) };
         }
         return record;
       });
@@ -220,7 +220,7 @@ export const useAppStore = () => {
 
       const updatedRecords = existingRecords.map(record => {
         if (record.id === giftId) {
-          return { ...record, encryptedData: JSON.stringify(updatedData) };
+          return { ...record, jsonData: JSON.stringify(updatedData) };
         }
         return record;
       });

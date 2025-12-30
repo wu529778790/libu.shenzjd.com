@@ -11,6 +11,9 @@ import GuestScreen from "./app/guest-screen/page";
 import TestData from "./app/test-data/page";
 import NotFound from "./app/not-found";
 
+// Toast 组件
+import { ToastContainer } from "./components/ui/Toast";
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <HashRouter>
@@ -23,5 +26,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="*" element={<NotFound />} />
       </Routes>
     </HashRouter>
+    <ToastContainer />
   </React.StrictMode>
 );

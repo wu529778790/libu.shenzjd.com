@@ -772,6 +772,37 @@ input[type="checkbox"].themed-ring:checked {
   box-shadow: 0 2px 4px var(--shadow-color);
 }
 
+/* ==================== Toast 动画 ==================== */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-slide-out-right {
+  animation: slideOutRight 0.3s ease-in;
+}
+
 /* ==================== 响应式调整 ==================== */
 @media (max-width: 1024px) {
   .gift-book-frame {

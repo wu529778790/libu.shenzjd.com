@@ -4,6 +4,7 @@ import { amountToChinese } from "@/utils/format";
 import { speakGiftData, speakSuccess, isVoiceSupported } from "@/lib/voice";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { error } from "@/components/ui/Toast";
 
 interface GiftEntryFormProps {
   onSubmit: (giftData: {
@@ -42,7 +43,7 @@ const GiftEntryForm: React.FC<GiftEntryFormProps> = ({
 
     const amount = parseFloat(formData.amount);
     if (!formData.name.trim() || isNaN(amount) || amount <= 0) {
-      alert("请填写正确的姓名和金额");
+      error("请填写正确的姓名和金额");
       return;
     }
 
