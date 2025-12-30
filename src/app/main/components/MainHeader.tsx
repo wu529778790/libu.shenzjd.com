@@ -42,18 +42,9 @@ export default function MainHeader({
           </p>
         </div>
         <div className="flex gap-2 flex-wrap no-print items-center">
-          {/* 搜索按钮 - 根据主题显示不同颜色 */}
-          <button
-            onClick={onOpenSearch}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm ${
-              event.theme === 'festive'
-                ? 'bg-red-500 hover:bg-red-600 text-white'
-                : 'bg-gray-600 hover:bg-gray-700 text-white'
-            }`}
-          >
-            <span className="text-base">🔍</span>
-            <span>搜索</span>
-          </button>
+          <Button variant="secondary" onClick={onOpenSearch}>
+            🔍 搜索
+          </Button>
 
           <Button variant="danger" size="sm" onClick={onGoHome}>
             返回首页

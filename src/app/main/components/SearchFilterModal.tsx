@@ -10,7 +10,6 @@ interface SearchFilterModalProps {
   setFilterType: (type: "all" | GiftType) => void;
   sortOrder: "asc" | "desc";
   setSortOrder: (order: "asc" | "desc") => void;
-  onClear: () => void;
   filteredCount: number;
   totalCount: number;
   theme: "festive" | "solemn";
@@ -26,7 +25,6 @@ export default function SearchFilterModal({
   setFilterType,
   sortOrder,
   setSortOrder,
-  onClear,
   filteredCount,
   totalCount,
   theme,
@@ -195,22 +193,13 @@ export default function SearchFilterModal({
           )}
         </div>
 
-        {/* 底部按钮 - 固定在底部 */}
-        <div className="flex gap-2 p-6 border-t bg-gray-50">
-          <button
-            onClick={() => {
-              onClear();
-              onClose();
-            }}
-            className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
-          >
-            🔄 清空所有
-          </button>
+        {/* 底部 - 只有一个关闭按钮 */}
+        <div className="p-6 border-t bg-gray-50 text-center">
           <button
             onClick={onClose}
-            className={`flex-1 px-4 py-2 ${color.primaryBg} ${color.primaryHover} text-white rounded-lg font-medium transition-colors`}
+            className={`px-6 py-2 ${color.primaryBg} ${color.primaryHover} text-white rounded-lg font-medium transition-colors`}
           >
-            ✅ 完成
+            关闭窗口
           </button>
         </div>
       </div>

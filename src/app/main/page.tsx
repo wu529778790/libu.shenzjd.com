@@ -565,11 +565,6 @@ export default function MainPage() {
           setFilterType={setFilterType}
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
-          onClear={() => {
-            setSearchTerm("");
-            setFilterType("all");
-            setSortOrder("desc");
-          }}
           filteredCount={modalFilteredGifts.length}
           totalCount={allValidGifts.length}
           theme={state.currentEvent.theme}
