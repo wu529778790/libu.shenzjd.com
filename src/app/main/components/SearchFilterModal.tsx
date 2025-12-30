@@ -88,19 +88,20 @@ export default function SearchFilterModal({
 
           {/* 类型筛选 */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">支付方式筛选</label>
-            <div className="flex flex-wrap gap-1.5">
+            <label className="block text-sm font-medium text-gray-700 mb-1">支付方式</label>
+            <div className="flex flex-wrap gap-1">
               {[
-                { value: "all", label: "📋 全部" },
-                { value: "现金", label: "💵 现金" },
-                { value: "微信", label: "💚 微信" },
-                { value: "支付宝", label: "💙 支付宝" },
-                { value: "其他", label: "📦 其他" },
+                { value: "all", label: "📋" },
+                { value: "现金", label: "💵" },
+                { value: "微信", label: "💚" },
+                { value: "支付宝", label: "💙" },
+                { value: "其他", label: "📦" },
               ].map((option) => (
                 <button
                   key={option.value}
+                  title={option.value === "all" ? "全部" : option.value}
                   onClick={() => setFilterType(option.value as any)}
-                  className={`px-2.5 py-1.5 rounded text-xs border transition-all ${
+                  className={`px-2 py-1.5 rounded text-sm border transition-all ${
                     filterType === option.value
                       ? `${color.activeBg} ${color.activeHover} text-white ${color.activeBorder} font-bold`
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -114,27 +115,29 @@ export default function SearchFilterModal({
 
           {/* 时间排序 */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">时间排序</label>
-            <div className="flex gap-1.5">
+            <label className="block text-sm font-medium text-gray-700 mb-1">时间排序</label>
+            <div className="flex gap-1">
               <button
                 onClick={() => setSortOrder("desc")}
-                className={`flex-1 px-3 py-1.5 rounded text-xs border transition-all ${
+                title="时间倒序（最新在前）"
+                className={`px-2.5 py-1.5 rounded text-sm border transition-all ${
                   sortOrder === "desc"
                     ? `${color.activeBg} ${color.activeHover} text-white ${color.activeBorder} font-bold`
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                ⏰ 倒序
+                ⏰
               </button>
               <button
                 onClick={() => setSortOrder("asc")}
-                className={`flex-1 px-3 py-1.5 rounded text-xs border transition-all ${
+                title="时间正序（最早在前）"
+                className={`px-2.5 py-1.5 rounded text-sm border transition-all ${
                   sortOrder === "asc"
                     ? `${color.activeBg} ${color.activeHover} text-white ${color.activeBorder} font-bold`
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                ⏰ 正序
+                ⏰
               </button>
             </div>
           </div>
