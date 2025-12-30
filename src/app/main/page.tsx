@@ -16,6 +16,7 @@ import MainHeader from "./components/MainHeader";
 import GiftBookDisplay from "./components/GiftBookDisplay";
 import ConfirmModal from "./components/ConfirmModal";
 import GiftDetailModal from "./components/GiftDetailModal";
+import SearchFilterModal from "./components/SearchFilterModal";
 
 export default function MainPage() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export default function MainPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | GiftType>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   // 检查是否有会话，如果没有则返回首页
   useEffect(() => {
@@ -472,66 +474,21 @@ export default function MainPage() {
           {/* 右侧：礼簿展示 + 页码统计 */}
           <div className="lg:col-span-2">
             <div className="gift-book-frame print-area">
-              {/* 搜索和筛选工具栏 - 只在有数据时显示 */}
+              {/* 搜索和筛选按钮 - 只在有数据时显示 */}
               {state.gifts.length > 0 && (
-                <div className="mb-3 p-4 bg-gray-50 rounded-lg border themed-border no-print">
-                  {/* 第一行：搜索框 */}
-                  <div className="flex gap-2 items-center mb-3">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        placeholder="🔍 搜索姓名或备注..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg text-sm themed-ring"
-                      />
-                    </div>
+                <div className="mb-3 flex justify-end no-print">
+                  <button
+                    onClick={() => setShowSearchModal(true)}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                  >
+                    <span className="text-lg">🔍</span>
+                    <span>搜索筛选</span>
                     {(searchTerm || filterType !== "all") && (
-                      <button
-                        onClick={() => {
-                          setSearchTerm("");
-                          setFilterType("all");
-                          setSortOrder("desc");
-                        }}
-                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 underline whitespace-nowrap"
-                      >
-                        清空
-                      </button>
+                      <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                        {filteredGifts.length}
+                      </span>
                     )}
-                  </div>
-
-                  {/* 第二行：筛选和排序 */}
-                  <div className="flex gap-2 items-center flex-wrap">
-                    <select
-                      value={filterType}
-                      onChange={(e) => setFilterType(e.target.value as any)}
-                      className="px-3 py-2 border rounded-lg text-sm themed-ring flex-1 min-w-[140px]"
-                    >
-                      <option value="all">📋 全部类型</option>
-                      <option value="现金">💵 现金</option>
-                      <option value="微信">💚 微信</option>
-                      <option value="支付宝">💙 支付宝</option>
-                      <option value="其他">📦 其他</option>
-                    </select>
-
-                    <select
-                      value={sortOrder}
-                      onChange={(e) => setSortOrder(e.target.value as any)}
-                      className="px-3 py-2 border rounded-lg text-sm themed-ring flex-1 min-w-[120px]"
-                    >
-                      <option value="desc">⏰ 时间倒序</option>
-                      <option value="asc">⏰ 时间正序</option>
-                    </select>
-                  </div>
-
-                  {/* 筛选结果统计 */}
-                  {searchTerm || filterType !== "all" ? (
-                    <div className="mt-2 text-xs text-gray-600 bg-white/50 p-2 rounded">
-                      📊 筛选结果: <strong>{filteredGifts.length}</strong> 条记录
-                      {searchTerm && <span className="ml-2">关键词: <strong>\"{searchTerm}\"</strong></span>}
-                      {filterType !== "all" && <span className="ml-2">类型: <strong>{filterType}</strong></span>}
-                    </div>
-                  ) : null}
+                  </button>
                 </div>
               )}
 
@@ -543,7 +500,7 @@ export default function MainPage() {
                   <span>人数: {pageGivers}</span>
                   {searchTerm || filterType !== "all" ? (
                     <span className="text-xs text-gray-500 ml-2">
-                      (总计: {totalGivers}人, ¥{totalAmount.toFixed(2)})
+                      (筛选: {totalGivers}人, ¥{totalAmount.toFixed(2)})
                     </span>
                   ) : null}
                 </div>
@@ -608,6 +565,25 @@ export default function MainPage() {
           onImportSuccess={handleImportSuccess}
           currentEvent={state.currentEvent}
           allEvents={state.events}
+        />
+
+        {/* 搜索筛选模态框 */}
+        <SearchFilterModal
+          isOpen={showSearchModal}
+          onClose={() => setShowSearchModal(false)}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          onClear={() => {
+            setSearchTerm("");
+            setFilterType("all");
+            setSortOrder("desc");
+          }}
+          filteredCount={filteredGifts.length}
+          totalCount={state.gifts.filter((g) => g.data && !g.data.abolished).length}
         />
       </div>
     </MainLayout>
