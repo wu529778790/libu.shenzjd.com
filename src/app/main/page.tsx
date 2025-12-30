@@ -529,43 +529,18 @@ export default function MainPage() {
             <div className="gift-book-frame print-area">
               {/* 搜索和筛选工具栏 - 只在有数据时显示 */}
               {state.gifts.length > 0 && (
-                <div className="mb-3 p-3 bg-gray-50 rounded-lg border themed-border no-print">
-                  <div className="flex flex-wrap gap-2 items-center">
-                    {/* 搜索框 */}
-                    <div className="flex-1 min-w-[200px]">
+                <div className="mb-3 p-4 bg-gray-50 rounded-lg border themed-border no-print">
+                  {/* 第一行：搜索框 */}
+                  <div className="flex gap-2 items-center mb-3">
+                    <div className="flex-1">
                       <input
                         type="text"
-                        placeholder="搜索姓名或备注..."
+                        placeholder="🔍 搜索姓名或备注..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full px-3 py-2 border rounded-lg text-sm themed-ring"
                       />
                     </div>
-
-                    {/* 类型筛选 */}
-                    <select
-                      value={filterType}
-                      onChange={(e) => setFilterType(e.target.value as any)}
-                      className="px-3 py-2 border rounded-lg text-sm themed-ring"
-                    >
-                      <option value="all">全部类型</option>
-                      <option value="现金">现金</option>
-                      <option value="微信">微信</option>
-                      <option value="支付宝">支付宝</option>
-                      <option value="其他">其他</option>
-                    </select>
-
-                    {/* 排序 */}
-                    <select
-                      value={sortOrder}
-                      onChange={(e) => setSortOrder(e.target.value as any)}
-                      className="px-3 py-2 border rounded-lg text-sm themed-ring"
-                    >
-                      <option value="desc">时间倒序</option>
-                      <option value="asc">时间正序</option>
-                    </select>
-
-                    {/* 清空按钮 */}
                     {(searchTerm || filterType !== "all") && (
                       <button
                         onClick={() => {
@@ -573,19 +548,43 @@ export default function MainPage() {
                           setFilterType("all");
                           setSortOrder("desc");
                         }}
-                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 underline"
+                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 underline whitespace-nowrap"
                       >
-                        清空筛选
+                        清空
                       </button>
                     )}
                   </div>
 
+                  {/* 第二行：筛选和排序 */}
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value as any)}
+                      className="px-3 py-2 border rounded-lg text-sm themed-ring flex-1 min-w-[140px]"
+                    >
+                      <option value="all">📋 全部类型</option>
+                      <option value="现金">💵 现金</option>
+                      <option value="微信">💚 微信</option>
+                      <option value="支付宝">💙 支付宝</option>
+                      <option value="其他">📦 其他</option>
+                    </select>
+
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as any)}
+                      className="px-3 py-2 border rounded-lg text-sm themed-ring flex-1 min-w-[120px]"
+                    >
+                      <option value="desc">⏰ 时间倒序</option>
+                      <option value="asc">⏰ 时间正序</option>
+                    </select>
+                  </div>
+
                   {/* 筛选结果统计 */}
                   {searchTerm || filterType !== "all" ? (
-                    <div className="mt-2 text-xs text-gray-600">
-                      筛选结果: {filteredGifts.length} 条记录
-                      {searchTerm && <span className="ml-2">关键词: "{searchTerm}"</span>}
-                      {filterType !== "all" && <span className="ml-2">类型: {filterType}</span>}
+                    <div className="mt-2 text-xs text-gray-600 bg-white/50 p-2 rounded">
+                      📊 筛选结果: <strong>{filteredGifts.length}</strong> 条记录
+                      {searchTerm && <span className="ml-2">关键词: <strong>\"{searchTerm}\"</strong></span>}
+                      {filterType !== "all" && <span className="ml-2">类型: <strong>{filterType}</strong></span>}
                     </div>
                   ) : null}
                 </div>
