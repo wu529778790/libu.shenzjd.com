@@ -1,15 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { GiftType } from "@/types";
+import { GiftType, GiftData } from "@/types";
 import { useAppStore } from "@/store/appStore";
 import MainLayout from "@/components/layout/MainLayout";
 import GiftEntryForm from "@/components/business/GiftEntryForm";
-import { formatDateTime, amountToChinese, formatCurrency } from "@/utils/format";
+import { amountToChinese, formatCurrency } from "@/utils/format";
 import { BackupService, ExcelImportResult } from "@/lib/backup";
+import { exportPDF } from "@/lib/pdfExport";
 import ImportExcelModal from "@/components/business/ImportExcelModal";
 import { speakError, speakText, isVoiceSupported } from "@/lib/voice";
+import { useToast } from "@/components/ui/Toast";
+import { saveGuestScreenData } from "@/lib/storage";
+import { useGiftStats } from "@/hooks/useGiftStats";
+import { PAGINATION } from "@/constants/pagination";
 import Button from "@/components/ui/Button";
-import { error, success, warning } from "@/components/ui/Toast";
 
 // 导入拆分的组件
 import MainHeader from "./components/MainHeader";
@@ -18,14 +22,26 @@ import ConfirmModal from "./components/ConfirmModal";
 import GiftDetailModal from "./components/GiftDetailModal";
 import SearchFilterModal from "./components/SearchFilterModal";
 
+interface GiftWithRecord {
+  record: { id: string };
+  data: GiftData | null;
+}
+
+interface ConfirmConfig {
+  title: string;
+  message: string;
+  onConfirm: () => void;
+}
+
 export default function MainPage() {
   const navigate = useNavigate();
   const { state, actions } = useAppStore();
+  const { error: showErrorToast, success: showSuccessToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedGift, setSelectedGift] = useState<any>(null);
+  const [selectedGift, setSelectedGift] = useState<GiftWithRecord | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmConfig, setConfirmConfig] = useState({
+  const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig>({
     title: "",
     message: "",
     onConfirm: () => {},
@@ -55,39 +71,47 @@ export default function MainPage() {
     return null;
   }
 
-  // 分页相关
-  const ITEMS_PER_PAGE = 12;
-
-  // 主界面显示的数据（不受搜索筛选影响，按时间倒序）
-  const displayGifts = state.gifts
-    .filter((g) => g.data && !g.data.abolished)
-    .sort((a, b) => {
-      if (!a.data || !b.data) return 0;
-      return new Date(b.data.timestamp).getTime() - new Date(a.data.timestamp).getTime();
-    })
-    .slice(
-      (currentPage - 1) * ITEMS_PER_PAGE,
-      currentPage * ITEMS_PER_PAGE
-    );
-
-  // 总页数
-  const totalValidCount = state.gifts.filter((g) => g.data && !g.data.abolished).length;
-  const totalPages = Math.ceil(totalValidCount / ITEMS_PER_PAGE) || 1;
+  // 统计相关 - 使用自定义 Hook
+  const { validGifts, totalAmount, totalGivers } = useGiftStats(state.gifts);
 
   // 重置页码当数据变化时
   useEffect(() => {
     setCurrentPage(1);
   }, [state.gifts]);
 
-  // 统计相关（所有数据）
-  const allValidGifts = state.gifts
-    .filter((g) => g.data && !g.data.abolished)
-    .map((g) => g.data!);
-  const totalAmount = allValidGifts.reduce((sum, g) => sum + g.amount, 0);
-  const totalGivers = allValidGifts.length;
-  const pageSubtotal = displayGifts
-    .filter((g) => g.data && !g.data.abolished)
-    .reduce((sum, g) => sum + g.data!.amount, 0);
+  // 主界面显示的数据（不受搜索筛选影响，按时间倒序）- 使用 useMemo 优化
+  const displayGifts = useMemo(
+    () =>
+      state.gifts
+        .filter((g) => g.data && !g.data.abolished)
+        .sort((a, b) => {
+          if (!a.data || !b.data) return 0;
+          return new Date(b.data.timestamp).getTime() - new Date(a.data.timestamp).getTime();
+        })
+        .slice(
+          (currentPage - 1) * PAGINATION.ITEMS_PER_PAGE,
+          currentPage * PAGINATION.ITEMS_PER_PAGE
+        ),
+    [state.gifts, currentPage]
+  );
+
+  // 总页数 - 使用 useMemo 优化
+  const totalValidCount = useMemo(
+    () => state.gifts.filter((g) => g.data && !g.data.abolished).length,
+    [state.gifts]
+  );
+  const totalPages = useMemo(
+    () => Math.ceil(totalValidCount / PAGINATION.ITEMS_PER_PAGE) || 1,
+    [totalValidCount]
+  );
+
+  const pageSubtotal = useMemo(
+    () =>
+      displayGifts
+        .filter((g) => g.data && !g.data.abolished)
+        .reduce((sum, g) => sum + g.data!.amount, 0),
+    [displayGifts]
+  );
   const pageGivers = displayGifts.filter((g) => g.data && !g.data.abolished).length;
 
   // 模态框内使用的筛选数据（不影响主界面）
@@ -138,27 +162,22 @@ export default function MainPage() {
     }
   };
 
-  // 同步数据到副屏
-  const syncDataToGuestScreen = () => {
+  // 同步数据到副屏 - 使用 useCallback 优化
+  const syncDataToGuestScreen = useCallback(() => {
     if (state.currentEvent) {
-      const validGifts = state.gifts
-        .filter((g) => g.data && !g.data.abolished)
-        .map((g) => g.data!)
-        .sort(
-          (a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
+      const sortedGifts = validGifts.sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
 
-      const syncData = {
+      saveGuestScreenData({
         eventName: state.currentEvent.name,
         theme:
           state.currentEvent.theme === "festive"
             ? "theme-festive"
             : "theme-solemn",
-        gifts: validGifts,
-      };
-
-      localStorage.setItem("guest_screen_data", JSON.stringify(syncData));
+        gifts: sortedGifts,
+      });
 
       // 使用 BroadcastChannel 通知副屏（如果浏览器支持）
       if (typeof BroadcastChannel !== "undefined") {
@@ -171,7 +190,7 @@ export default function MainPage() {
         }
       }
     }
-  };
+  }, [state.currentEvent, validGifts]);
 
   // 返回首页（清除会话）
   const handleGoHome = () => {
@@ -186,11 +205,11 @@ export default function MainPage() {
     setShowConfirmModal(true);
   };
 
-  // 打开详情弹窗
-  const openDetailModal = (gift: any) => {
+  // 打开详情弹窗 - 使用 useCallback 优化
+  const openDetailModal = useCallback((gift: GiftWithRecord) => {
     setSelectedGift(gift);
     setShowDetailModal(true);
-  };
+  }, []);
 
   // 关闭详情弹窗
   const closeDetailModal = () => {
@@ -198,202 +217,117 @@ export default function MainPage() {
     setSelectedGift(null);
   };
 
-  // 保存编辑
-  const saveEdit = async (giftId: string, updatedData: any) => {
-    const success = await actions.updateGift(giftId, updatedData);
-    if (success) {
-      // 更新选中的礼物数据
-      setSelectedGift({
-        ...selectedGift,
-        data: updatedData,
-      });
-      // 同步数据到副屏
-      syncDataToGuestScreen();
+  // 保存编辑 - 使用 useCallback 优化
+  const saveEdit = useCallback(
+    async (giftId: string, updatedData: GiftData): Promise<boolean> => {
+      try {
+        const success = await actions.updateGift(giftId, updatedData);
+        if (success) {
+          // 更新选中的礼物数据
+          if (selectedGift) {
+            setSelectedGift({
+              ...selectedGift,
+              data: updatedData,
+            });
+          }
+          // 同步数据到副屏
+          syncDataToGuestScreen();
 
-      // 语音播报修改成功
-      if (isVoiceSupported()) {
-        speakText(
-          `修改成功，${updatedData.name}，${amountToChinese(
-            updatedData.amount
-          )}元，${updatedData.type}`
-        );
+          // 语音播报修改成功
+          if (isVoiceSupported()) {
+            speakText(
+              `修改成功，${updatedData.name}，${amountToChinese(
+                updatedData.amount
+              )}元，${updatedData.type}`
+            );
+          }
+          showSuccessToast("修改成功");
+          return true;
+        } else {
+          showErrorToast("更新失败，请重试");
+          if (isVoiceSupported()) {
+            speakError();
+          }
+          return false;
+        }
+      } catch (error) {
+        showErrorToast("更新失败，请重试");
+        if (isVoiceSupported()) {
+          speakError();
+        }
+        return false;
       }
-      return true;
-    } else {
-      error("更新失败，请重试");
-      if (isVoiceSupported()) {
-        speakError();
-      }
-      return false;
-    }
-  };
+    },
+    [actions, selectedGift, syncDataToGuestScreen, showSuccessToast, showErrorToast]
+  );
 
-  // 删除记录
-  const deleteGift = async (giftId: string) => {
-    const success = await actions.deleteGift(giftId);
-    if (success) {
-      // 语音播报删除成功
-      if (isVoiceSupported()) {
-        speakText(`已删除 ${selectedGift.data.name} 的记录`);
+  // 删除记录 - 使用 useCallback 优化
+  const deleteGift = useCallback(
+    async (giftId: string): Promise<boolean> => {
+      try {
+        const success = await actions.deleteGift(giftId);
+        if (success) {
+          // 语音播报删除成功
+          if (isVoiceSupported() && selectedGift?.data) {
+            speakText(`已删除 ${selectedGift.data.name} 的记录`);
+          }
+          showSuccessToast("删除成功");
+          return true;
+        } else {
+          showErrorToast("删除失败，请重试");
+          if (isVoiceSupported()) {
+            speakError();
+          }
+          return false;
+        }
+      } catch (error) {
+        showErrorToast("删除失败，请重试");
+        if (isVoiceSupported()) {
+          speakError();
+        }
+        return false;
       }
-      return true;
-    } else {
-      error("删除失败，请重试");
-      if (isVoiceSupported()) {
-        speakError();
-      }
-      return false;
-    }
-  };
+    },
+    [actions, selectedGift, showSuccessToast, showErrorToast]
+  );
 
-  // 导出当前事件数据（Excel）
-  const exportData = () => {
+  // 导出当前事件数据（Excel） - 使用 useCallback 优化
+  const exportData = useCallback(() => {
     try {
-      const validGifts = state.gifts
-        .filter((g) => g.data && !g.data.abolished)
-        .map((g) => g.data!);
-
       if (validGifts.length === 0) {
-        warning("暂无礼金记录可导出");
+        showErrorToast("暂无礼金记录可导出");
+        return;
+      }
+
+      if (!state.currentEvent) {
+        showErrorToast("未选择事件");
         return;
       }
 
       BackupService.exportExcel(
-        state.currentEvent!.name,
+        state.currentEvent.name,
         validGifts,
-        state.currentEvent!
+        state.currentEvent
       );
-      success("Excel导出成功");
-    } catch (err) {
-      error("导出Excel失败：" + (err as Error).message);
+      showSuccessToast("导出成功");
+    } catch (error) {
+      showErrorToast("导出Excel失败：" + (error instanceof Error ? error.message : "未知错误"));
     }
-  };
+  }, [validGifts, state.currentEvent, showSuccessToast, showErrorToast]);
 
-  // 导出 PDF（打印所有数据）
-  const exportPDF = () => {
-    const validGifts = state.gifts
-      .filter((g) => g.data && !g.data.abolished)
-      .map((g) => g.data!);
-
-    if (validGifts.length === 0) {
-      warning("暂无礼金记录可打印");
+  // 导出 PDF（打印所有数据） - 使用 useCallback 优化
+  const handleExportPDF = useCallback(() => {
+    if (!state.currentEvent) {
+      showErrorToast("未选择事件");
       return;
     }
 
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      error("无法打开打印窗口，请检查浏览器设置");
-      return;
+    try {
+      exportPDF(state.currentEvent, validGifts);
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : "打印失败");
     }
-
-    const isFestive = state.currentEvent!.theme === "festive";
-    const sortedGifts = validGifts.sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    const giftColumnsHTML = sortedGifts
-      .map((gift) => {
-        const name =
-          gift.name.length === 2
-            ? `${gift.name[0]}　${gift.name[1]}`
-            : gift.name;
-        const amountChinese = amountToChinese(gift.amount);
-        return `
-        <div class="print-gift-column">
-          <div class="book-cell name-cell column-top">${name}</div>
-          <div class="book-cell amount-cell column-bottom">${amountChinese}</div>
-        </div>
-      `;
-      })
-      .join("");
-
-    const totalAmount = validGifts.reduce((sum, g) => sum + g.amount, 0);
-    const typeStats = validGifts.reduce((acc, g) => {
-      acc[g.type] = (acc[g.type] || 0) + g.amount;
-      return acc;
-    }, {} as Record<string, number>);
-    const statsHTML = Object.entries(typeStats)
-      .map(([type, amount]) => `<span class="type-stat"><em>${type}</em><b>¥${amount.toFixed(2)}</b></span>`)
-      .join("");
-
-    const themeColors = {
-      festive: {
-        primary: "#d9534f",
-        secondary: "#c9302c",
-        border: "#f8d7da",
-        text: "#721c24",
-        bg: "#fff5f5",
-        stats: "#d9534f",
-      },
-      solemn: {
-        primary: "#343a40",
-        secondary: "#495057",
-        border: "#e9ecef",
-        text: "#212529",
-        bg: "#f8f9fa",
-        stats: "#495057",
-      },
-    };
-
-    const colors = themeColors[isFestive ? "festive" : "solemn"];
-
-    const printHTML = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>礼金簿打印 - ${state.currentEvent!.name}</title>
-        <style>
-          @page { size: A4 landscape; margin: 10mm; }
-          body { margin: 0; padding: 0; font-family: "KaiTi", "楷体", serif; background: ${colors.bg}; }
-          .print-container { width: 100%; height: 100%; padding: 5mm; box-sizing: border-box; }
-          .print-header { margin-bottom: 8mm; padding-bottom: 3mm; border-bottom: 3px solid ${colors.primary}; background: linear-gradient(to right, ${colors.bg}, white); padding: 3mm 2mm; border-radius: 4px; }
-          .print-header h1 { font-size: 26pt; margin: 0 0 5mm 0; font-weight: bold; text-align: center; color: ${colors.primary}; letter-spacing: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-          .print-header .info { display: flex; justify-content: space-between; font-size: 10pt; color: ${colors.secondary}; margin-bottom: 3mm; font-weight: 500; }
-          .print-header .stats { display: flex; justify-content: center; gap: 8mm; margin-top: 2mm; font-size: 10pt; flex-wrap: wrap; align-items: center; }
-          .print-header .stats .type-stat { display: inline-flex; flex-direction: column; align-items: center; white-space: nowrap; color: ${colors.stats}; background: white; padding: 1mm 2mm; border-radius: 3px; border: 1px solid ${colors.border}; min-width: 18mm; }
-          .print-header .stats .type-stat em { font-style: normal; font-size: 8pt; margin-bottom: 0.5mm; opacity: 0.8; }
-          .print-header .stats .type-stat b { font-weight: bold; font-size: 11pt; }
-          .print-gift-columns-wrapper { width: 100%; height: calc(100% - 45mm); display: flex; align-items: center; justify-content: center; }
-          .print-gift-columns { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5mm; grid-auto-rows: minmax(35mm, auto); width: 100%; height: 100%; align-content: center; justify-content: center; }
-          .print-gift-column { display: grid; grid-template-rows: 1fr 1.2fr; border: 2px solid ${colors.border}; border-radius: 4px; overflow: hidden; page-break-inside: avoid; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-width: 0; height: 100%; }
-          .book-cell { display: grid; place-items: center; writing-mode: vertical-lr; text-orientation: mixed; font-weight: bold; padding: 10px 0; overflow: hidden; text-align: center; line-height: 1.2; width: 100%; height: 100%; }
-          .column-top { border-bottom: 2px solid ${colors.border}; }
-          .name-cell { font-size: 19pt; color: ${colors.primary}; background: white; }
-          .amount-cell { font-size: 17pt; color: ${colors.primary}; background: white; }
-          .column-bottom { border-top: none; }
-          @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="print-container">
-          <div class="print-header">
-            <h1>${state.currentEvent!.name}</h1>
-            <div class="info">
-              <span>时间: ${formatDateTime(state.currentEvent!.startDateTime)} ~ ${formatDateTime(state.currentEvent!.endDateTime)}</span>
-              ${state.currentEvent!.recorder ? `<span>记账人: ${state.currentEvent!.recorder}</span>` : ""}
-            </div>
-            <div class="stats">
-              <span class="type-stat"><em>总金额</em><b>¥${totalAmount.toFixed(2)}</b></span>
-              <span class="type-stat"><em>总人数</em><b>${validGifts.length}人</b></span>
-              ${statsHTML}
-            </div>
-          </div>
-          <div class="print-gift-columns">${giftColumnsHTML}</div>
-        </div>
-        <script>
-          setTimeout(() => { window.print(); setTimeout(() => { window.close(); }, 500); }, 100);
-        </script>
-      </body>
-      </html>
-    `;
-
-    printWindow.document.write(printHTML);
-    printWindow.document.close();
-  };
+  }, [validGifts, state.currentEvent, showErrorToast]);
 
   // 打开副屏
   const openGuestScreen = () => {
@@ -433,7 +367,7 @@ export default function MainPage() {
         <MainHeader
           event={state.currentEvent}
           onGoHome={handleGoHome}
-          onExportPDF={exportPDF}
+          onExportPDF={handleExportPDF}
           onImport={() => setShowImportModal(true)}
           onExportExcel={exportData}
           onOpenGuestScreen={openGuestScreen}

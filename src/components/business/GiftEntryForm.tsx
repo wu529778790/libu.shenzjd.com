@@ -14,11 +14,13 @@ interface GiftEntryFormProps {
     remark?: string;
   }) => void;
   loading?: boolean;
+  onError?: (message: string) => void;
 }
 
 const GiftEntryForm: React.FC<GiftEntryFormProps> = ({
   onSubmit,
   loading = false,
+  onError,
 }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -43,7 +45,12 @@ const GiftEntryForm: React.FC<GiftEntryFormProps> = ({
 
     const amount = parseFloat(formData.amount);
     if (!formData.name.trim() || isNaN(amount) || amount <= 0) {
-      error("请填写正确的姓名和金额");
+      const errorMsg = "请填写正确的姓名和金额";
+      if (onError) {
+        onError(errorMsg);
+      } else {
+        alert(errorMsg);
+      }
       return;
     }
 

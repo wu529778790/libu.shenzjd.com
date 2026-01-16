@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BackupService, ExcelPreview, ExcelImportResult } from '@/lib/backup';
 import { Event } from '@/types';
+import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import { error, warning } from '@/components/ui/Toast';
 
@@ -19,6 +20,7 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
   currentEvent,
   allEvents = [],
 }) => {
+  const { error: showErrorToast } = useToast();
   const [step, setStep] = useState<'select' | 'preview' | 'config' | 'result'>('select');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ExcelPreview | null>(null);
@@ -39,7 +41,7 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
 
     // 验证文件类型
     if (!selectedFile.name.match(/\.(xlsx|xls)$/i)) {
-      error('请选择 Excel 文件 (.xlsx 或 .xls)');
+      showErrorToast('请选择 Excel 文件 (.xlsx 或 .xls)');
       return;
     }
 
@@ -70,8 +72,8 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
       }
 
       setStep('preview');
-    } catch (err) {
-      error('无法读取文件：' + (err as Error).message);
+    } catch (error) {
+      showErrorToast('无法读取文件：' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }
@@ -101,8 +103,8 @@ const ImportExcelModal: React.FC<ImportExcelModalProps> = ({
       if (importResult.success) {
         onImportSuccess(importResult);
       }
-    } catch (err) {
-      error('导入失败：' + (err as Error).message);
+    } catch (error) {
+      showErrorToast('导入失败：' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
       setLoading(false);
     }

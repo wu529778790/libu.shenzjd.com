@@ -5,6 +5,7 @@ import { error, success } from "@/components/ui/Toast";
 export default function TestData() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { success: showSuccessToast, error: showErrorToast } = useToast();
   const [eventId, setEventId] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +26,7 @@ export default function TestData() {
 
   const generateTestData = async () => {
     if (!eventId) {
-      error("请先创建事件！");
+      showErrorToast("请先创建事件！");
       navigate("/");
       return;
     }
@@ -64,7 +65,7 @@ export default function TestData() {
         gifts.push({
           id: `test-${i}`,
           eventId,
-          jsonData: JSON.stringify(giftData),
+          dataJson: JSON.stringify(giftData),
         });
       }
 
@@ -73,7 +74,7 @@ export default function TestData() {
 
       // 同步到副屏（直接解析JSON）
       const decryptedGifts = gifts.map((r) =>
-        JSON.parse(r.jsonData)
+        JSON.parse(r.dataJson)
       ).filter(g => g !== null);
 
       const syncData = {
@@ -83,11 +84,11 @@ export default function TestData() {
       };
       localStorage.setItem("guest_screen_data", JSON.stringify(syncData));
 
-      success(`成功生成 ${gifts.length} 条测试数据！请返回首页查看`);
+      showSuccessToast(`成功生成 ${gifts.length} 条测试数据！现在可以返回首页选择事件查看。`);
       navigate("/");
     } catch (err) {
       console.error(err);
-      error("生成测试数据失败: " + err);
+      showErrorToast("生成测试数据失败: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }

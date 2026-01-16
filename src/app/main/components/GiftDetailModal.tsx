@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GiftType } from '@/types';
 import { amountToChinese } from '@/utils/format';
+import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import { error } from '@/components/ui/Toast';
 
@@ -27,6 +28,7 @@ export default function GiftDetailModal({
   onEdit,
   onDelete,
 }: GiftDetailModalProps) {
+  const { error: showErrorToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -63,7 +65,7 @@ export default function GiftDetailModal({
   const handleSave = async () => {
     const amount = parseFloat(editFormData.amount);
     if (!editFormData.name.trim() || isNaN(amount) || amount <= 0) {
-      error('请填写正确的姓名和金额');
+      showErrorToast('请填写正确的姓名和金额');
       return;
     }
 

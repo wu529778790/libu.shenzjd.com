@@ -475,7 +475,7 @@ export class BackupService {
       if (existingRecords.length > 0) {
         existingRecords.forEach(record => {
           try {
-            const data = JSON.parse(record.jsonData) as GiftData;
+            const data = JSON.parse(record.dataJson) as GiftData;
             if (data && !data.abolished) {
               const key = `${data.name}_${data.amount}_${data.timestamp}`;
               existingGiftKeys.add(key);
@@ -504,7 +504,7 @@ export class BackupService {
             // 删除旧的记录
             const index = existingGiftsCopy.findIndex(record => {
               try {
-                const data = JSON.parse(record.jsonData) as GiftData;
+                const data = JSON.parse(record.dataJson) as GiftData;
                 if (!data) return false;
                 const recordKey = `${data.name}_${data.amount}_${data.timestamp}`;
                 return recordKey === key;
@@ -523,7 +523,7 @@ export class BackupService {
         const record: GiftRecord = {
           id: generateId(),
           eventId: targetEventId,
-          jsonData: JSON.stringify(gift),
+          dataJson: JSON.stringify(gift),
         };
 
         giftsToImport.push(record);

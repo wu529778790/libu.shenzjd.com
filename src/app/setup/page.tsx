@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Event } from "@/types";
+import { Event, GiftRecord } from "@/types";
+import { generateId } from "@/utils/format";
+import { useAppStore } from "@/store/appStore";
+import { saveGiftsByEventId } from "@/lib/storage";
 import PageLayout from "@/components/layout/PageLayout";
 import FormLayout from "@/components/layout/FormLayout";
 import Button from "@/components/ui/Button";
@@ -8,6 +11,7 @@ import Input from "@/components/ui/Input";
 
 export default function Setup() {
   const navigate = useNavigate();
+  const { actions } = useAppStore();
   const [formData, setFormData] = useState({
     name: "张三 & 李四 婚礼", // 默认事件名称
     startDate: new Date().toISOString().split('T')[0], // 默认为今天
@@ -41,7 +45,7 @@ export default function Setup() {
       const endDateTime = `${formData.endDate}T23:59:59`;
 
       const event: Event = {
-        id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+        id: generateId(),
         name: formData.name,
         startDateTime,
         endDateTime,
@@ -51,42 +55,37 @@ export default function Setup() {
         createdAt: new Date().toISOString(),
       };
 
-      const existingEvents = JSON.parse(
-        localStorage.getItem("giftlist_events") || "[]"
-      );
-      existingEvents.push(event);
-      localStorage.setItem("giftlist_events", JSON.stringify(existingEvents));
+      // 使用 store actions 创建事件
+      const success = await actions.addEvent(event);
+      if (!success) {
+        setError("创建事件失败，请重试");
+        setLoading(false);
+        return;
+      }
 
-      // 自动创建测试数据（明文JSON存储）
-      const testGifts = [
-        {
-          id: "test1",
-          eventId: event.id,
-          jsonData: JSON.stringify({
-            name: "测试来宾",
-            amount: 888,
-            type: "现金" as const,
-            remark: "新婚快乐",
-            timestamp: new Date().toISOString(),
-          }),
-        },
-      ];
-      localStorage.setItem(`giftlist_gifts_${event.id}`, JSON.stringify(testGifts));
-
-      // 保存会话信息（无需密码）
-      sessionStorage.setItem(
-        "currentEvent",
-        JSON.stringify({
-          event: event,
+      // 自动创建测试数据（明文存储，无需加密）
+      const testGift: GiftRecord = {
+        id: generateId(),
+        eventId: event.id,
+        dataJson: JSON.stringify({
+          name: "测试来宾",
+          amount: 888,
+          type: "现金" as const,
+          remark: "新婚快乐",
           timestamp: new Date().toISOString(),
-        })
-      );
+          abolished: false,
+        }),
+      };
+      saveGiftsByEventId(event.id, [testGift]);
+
+      // 保存会话信息
+      actions.saveSession(event);
 
       // 直接跳转到主页面
       navigate("/main", { replace: true });
     } catch (err) {
       console.error(err);
-      setError("创建事件失败: " + err);
+      setError("创建事件失败: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
